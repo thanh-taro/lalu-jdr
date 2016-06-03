@@ -122,15 +122,15 @@ abstract class Object
      */
     public function getParams(array $fields = [])
     {
-        if (empty($fields)) {
-            return $this->_params;
-        }
         if (empty($this->_params)) {
             return [];
         }
         $jsonStruct = $this->getJsonStruct();
         if ($jsonStruct === false || $jsonStruct === null || !is_array($jsonStruct)) {
             return [];
+        }
+        if (empty($fields)) {
+            return $this->_params;
         }
         $result = [];
         foreach ($fields as $field) {
@@ -147,12 +147,15 @@ abstract class Object
     /**
      * Set param.
      *
+     * @param string $field
+     * @param mixed  $value
+     *
      * @return $this
      */
     public function set($field, $value)
     {
         $jsonStruct = $this->getJsonStruct();
-        if ($jsonStruct === false || $jsonStruct === null || !is_array($jsonStruct)) {
+        if ($jsonStruct === false || $jsonStruct === null || !is_array($jsonStruct) || empty($field)) {
             return $this;
         }
         if (empty($jsonStruct) || in_array($field, $jsonStruct)) {
@@ -165,19 +168,26 @@ abstract class Object
     /**
      * Add param.
      *
+     * @param string      $field
+     * @param mixed       $value
+     * @param string|null $key
+     *
      * @return $this
      */
-    public function add($field, $value)
+    public function add($field, $value, $key = null)
     {
         $jsonStruct = $this->getJsonStruct();
-        if ($jsonStruct === false || $jsonStruct === null || !is_array($jsonStruct)) {
+        if ($jsonStruct === false || $jsonStruct === null || !is_array($jsonStruct) || empty($field)) {
             return $this;
         }
         if (empty($jsonStruct) || in_array($field, $jsonStruct)) {
             if (empty($this->_params[$field])) {
-                $this->_params[$field] = [$value];
-            } else {
+                $this->_params[$field] = [];
+            }
+            if ($key === null) {
                 $this->_params[$field][] = $value;
+            } else {
+                $this->_params[$field][$key] = $value;
             }
         }
 

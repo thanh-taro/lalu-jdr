@@ -2,17 +2,18 @@
 
 namespace LaLu\JDR;
 
-use LaLu\JDR\JsonObjects\Resource;
+use LaLu\JDR\JsonObjects\Error;
+use LaLu\JDR\JsonObjects\Meta;
 use Faker\Factory;
 
-class ResourceTest extends BaseJsonObjectTestCase
+class ErrorTest extends BaseJsonObjectTestCase
 {
     public function testAttributes()
     {
-        $object = new Resource();
+        $object = new Error();
 
-        $this->assertClassHasAttribute('_version', Resource::class);
-        $this->assertClassHasAttribute('_params', Resource::class);
+        $this->assertClassHasAttribute('_version', Error::class);
+        $this->assertClassHasAttribute('_params', Error::class);
         $this->assertAttributeEquals('1.0', '_version', $object);
         $this->assertAttributeEquals([], '_params', $object);
     }
@@ -21,29 +22,31 @@ class ResourceTest extends BaseJsonObjectTestCase
     {
         $faker = Factory::create();
 
-        $object = new Resource();
+        $object = new Error();
         $this->assertContainsOnly('string', $object->getJsonStruct());
         $this->assertContains('id', $object->getJsonStruct());
-        $this->assertContains('type', $object->getJsonStruct());
-        $this->assertContains('attributes', $object->getJsonStruct());
-        $this->assertContains('relationships', $object->getJsonStruct());
+        $this->assertContains('status', $object->getJsonStruct());
+        $this->assertContains('code', $object->getJsonStruct());
+        $this->assertContains('title', $object->getJsonStruct());
+        $this->assertContains('detail', $object->getJsonStruct());
+        $this->assertContains('source', $object->getJsonStruct());
         $this->assertContains('links', $object->getJsonStruct());
         $this->assertContains('meta', $object->getJsonStruct());
-        $this->assertSame(['id', 'type', 'attributes', 'relationships', 'links', 'meta'], $object->getJsonStruct());
-        $object = new Resource(['version' => null]);
+        $this->assertSame(['id', 'status', 'code', 'title', 'detail', 'source', 'links', 'meta'], $object->getJsonStruct());
+        $object = new Error(['version' => null]);
         $this->assertFalse($object->getJsonStruct());
-        $object = new Resource(['version' => 1]);
+        $object = new Error(['version' => 1]);
         $this->assertFalse($object->getJsonStruct());
-        $object = new Resource(['version' => '1']);
+        $object = new Error(['version' => '1']);
         $this->assertFalse($object->getJsonStruct());
-        $object = new Resource(['version' => 'foo']);
+        $object = new Error(['version' => 'foo']);
         $this->assertFalse($object->getJsonStruct());
         for ($i = 0; $i <= static::MAX_LOOP; ++$i) {
             $version = $faker->text;
-            $object = new Resource(['version' => $version]);
+            $object = new Error(['version' => $version]);
             $this->assertFalse($object->getJsonStruct());
             $version = $faker->randomNumber;
-            $object = new Resource(['version' => $version]);
+            $object = new Error(['version' => $version]);
             $this->assertFalse($object->getJsonStruct());
         }
     }
@@ -51,7 +54,7 @@ class ResourceTest extends BaseJsonObjectTestCase
     public function testLoadOptionsMethod()
     {
         $faker = Factory::create();
-        $object = new Resource();
+        $object = new Error();
 
         $this->assertSame($object, $object->loadOptions([]));
         $this->assertSame('1.0', $object->getVersion());
@@ -86,7 +89,7 @@ class ResourceTest extends BaseJsonObjectTestCase
     public function testSetGetVersionMethod()
     {
         $faker = Factory::create();
-        $object = new Resource();
+        $object = new Error();
 
         $this->assertSame($object, $object->setVersion(null));
         $this->assertSame(null, $object->getVersion());
@@ -108,17 +111,5 @@ class ResourceTest extends BaseJsonObjectTestCase
         }
         $this->assertSame($object, $object->setVersion(PHP_INT_MAX));
         $this->assertSame(strval(PHP_INT_MAX), $object->getVersion());
-    }
-
-    public function testToArray()
-    {
-        $object = new Resource();
-        $this->assertSame([], $object->toArray());
-    }
-
-    public function testToJson()
-    {
-        $object = new Resource();
-        $this->assertNull($object->toJson());
     }
 }

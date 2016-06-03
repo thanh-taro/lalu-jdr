@@ -2,14 +2,12 @@
 
 namespace LaLu\JDR;
 
-use PHPUnit_Framework_TestCase;
 use LaLu\JDR\JsonObjects\Jsonapi;
+use LaLu\JDR\JsonObjects\Meta;
 use Faker\Factory;
 
-class JsonapiTest extends PHPUnit_Framework_TestCase
+class JsonapiTest extends BaseJsonObjectTestCase
 {
-    const MAX_LOOP = 10000;
-
     public function testAttributes()
     {
         $object = new Jsonapi();
@@ -119,6 +117,23 @@ class JsonapiTest extends PHPUnit_Framework_TestCase
             $this->assertNull($object->$field);
             $this->assertSame([], $object->getParams());
         }
+
+        $object = new Jsonapi();
+        $object->set('meta', 'jsonapi');
+        $object->setVersion(null);
+        $this->assertSame([], $object->getParams());
+        $this->assertSame([], $object->getParams(['meta']));
+
+
+        $object = new Jsonapi();
+        $this->assertSame([], $object->getParams());
+        $this->assertSame($object, $object->add('meta', ['title' => 'JDR']));
+        $this->assertSame([['title' => 'JDR']], $object->meta);
+        $this->assertSame(['meta' => [['title' => 'JDR']]], $object->getParams());
+        $this->assertSame(['meta' => [['title' => 'JDR']]], $object->getParams(['meta']));
+        $this->assertSame(['version' => null, 'meta' => [['title' => 'JDR']]], $object->getParams(['version', 'meta']));
+
+        $object = new Jsonapi();
         $this->assertSame([], $object->getParams());
         $this->assertSame($object, $object->set('version', '1.0'));
         $this->assertSame('1.0', $object->version);
@@ -141,6 +156,11 @@ class JsonapiTest extends PHPUnit_Framework_TestCase
                 $this->assertSame(['meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']], $object->getParams(['meta']));
             }
         }
+        $this->assertSame($object, $object->add('meta', 'Viet Nam', 'country'));
+        $this->assertSame(['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>', 'country' => 'Viet Nam'], $object->meta);
+        $this->assertSame(['version' => '1.0', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>', 'country' => 'Viet Nam']], $object->getParams());
+        $this->assertSame(['version' => '1.0'], $object->getParams(['version']));
+        $this->assertSame(['meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>', 'country' => 'Viet Nam']], $object->getParams(['meta']));
         $this->assertSame($object, $object->delete('meta'));
         $this->assertNull($object->meta);
         $this->assertSame(['version' => '1.0'], $object->getParams());
@@ -154,6 +174,8 @@ class JsonapiTest extends PHPUnit_Framework_TestCase
         $this->assertSame([], $object->toArray());
         $object = new Jsonapi([], ['version' => '1.0', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']]);
         $this->assertSame(['version' => '1.0', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']], $object->toArray());
+        $object = new Jsonapi([], ['meta' => (new Meta())->set('author', 'Thanh Taro')]);
+        $this->assertSame(['meta' => ['author' => 'Thanh Taro']], $object->toArray());
     }
 
     public function testToJson()

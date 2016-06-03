@@ -2,14 +2,11 @@
 
 namespace LaLu\JDR;
 
-use PHPUnit_Framework_TestCase;
 use LaLu\JDR\JsonObjects\Link;
 use Faker\Factory;
 
-class LinkTest extends PHPUnit_Framework_TestCase
+class LinkTest extends BaseJsonObjectTestCase
 {
-    const MAX_LOOP = 10000;
-
     public function testAttributes()
     {
         $object = new Link();
@@ -118,6 +115,11 @@ class LinkTest extends PHPUnit_Framework_TestCase
             $this->assertNull($object->$field);
             $this->assertSame([], $object->getParams());
         }
+        $object->setVersion(null);
+        $this->assertSame([], $object->getParams());
+        $this->assertSame([], $object->getParams(['meta']));
+
+        $object = new Link();
         $this->assertSame([], $object->getParams());
         $this->assertSame($object, $object->set('href', 'http://www.skilesdonnelly.biz/aut-accusantium-ut-architecto-sit-et.html'));
         $this->assertSame('http://www.skilesdonnelly.biz/aut-accusantium-ut-architecto-sit-et.html', $object->href);

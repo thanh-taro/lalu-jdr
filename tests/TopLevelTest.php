@@ -2,14 +2,11 @@
 
 namespace LaLu\JDR;
 
-use PHPUnit_Framework_TestCase;
 use LaLu\JDR\JsonObjects\TopLevel;
 use Faker\Factory;
 
-class TopLevelTest extends PHPUnit_Framework_TestCase
+class TopLevelTest extends BaseJsonObjectTestCase
 {
-    const MAX_LOOP = 10000;
-
     public function testAttributes()
     {
         $object = new TopLevel();

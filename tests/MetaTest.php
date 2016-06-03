@@ -2,14 +2,11 @@
 
 namespace LaLu\JDR;
 
-use PHPUnit_Framework_TestCase;
 use LaLu\JDR\JsonObjects\Meta;
 use Faker\Factory;
 
-class MetaTest extends PHPUnit_Framework_TestCase
+class MetaTest extends BaseJsonObjectTestCase
 {
-    const MAX_LOOP = 10000;
-
     public function testAttributes()
     {
         $object = new Meta();

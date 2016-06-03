@@ -12,6 +12,7 @@ class JDRServiceProvider extends ServiceProvider
     public function boot()
     {
     }
+
     /**
      * Register the application services.
      */
