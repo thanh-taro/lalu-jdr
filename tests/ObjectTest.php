@@ -2,14 +2,11 @@
 
 namespace LaLu\JDR;
 
-use PHPUnit_Framework_TestCase;
 use LaLu\JDR\JsonObjects\Object;
 use Faker\Factory;
 
-class ObjectTest extends PHPUnit_Framework_TestCase
+class ObjectTest extends BaseJsonObjectTestCase
 {
-    const MAX_LOOP = 10000;
-
     public function testAbstractMethod()
     {
         $faker = Factory::create();
@@ -112,6 +109,9 @@ class ObjectTest extends PHPUnit_Framework_TestCase
         $faker = Factory::create();
         $stub = $this->getMockForAbstractClass(Object::class);
 
+        $this->assertSame($stub, $stub->setParams([]));
+        $this->assertSame([], $stub->getParams());
+        $this->assertSame([], $stub->getParams(['param1']));
         $this->assertSame($stub, $stub->setParams(['param1' => 'value1']));
         $this->assertSame([], $stub->getParams());
         $this->assertSame([], $stub->getParams(['param1']));
