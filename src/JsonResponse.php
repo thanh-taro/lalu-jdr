@@ -3,7 +3,7 @@
 namespace LaLu\JDR;
 
 use Exception;
-use LaLu\JDR\JsonObjects\Object;
+use LaLu\JDR\JsonObjects\TopLevel;
 use Illuminate\Http\JsonResponse as BaseJsonResponse;
 
 class JsonResponse
@@ -61,12 +61,21 @@ class JsonResponse
         return $this;
     }
 
+    /**
+     * Generate response.
+     *
+     * @param \LaLu\JDR\JsonObjects\TopLevel $topLevel
+     * @param int|null                       $status
+     * @param array|null                     $headers
+     *
+     * @return Illuminate\Http\JsonResponse
+     */
     public function generateData($topLevel, $status = null, $headers = null)
     {
         if ($topLevel === null) {
             $this->setStatus(204);
         }
-        if (!($topLevel instanceof Object)) {
+        if (!($topLevel instanceof TopLevel)) {
             throw new Exception('Wrong parameter for generator', 500);
         }
         if ($status !== null) {
