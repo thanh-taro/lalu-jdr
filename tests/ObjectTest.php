@@ -164,7 +164,7 @@ class ObjectTest extends BaseJsonObjectTestCase
     public function testToArray()
     {
         $stub = $this->getMockForAbstractClass(Object::class);
-        $this->assertSame([], $stub->toArray());
+        $this->assertSame(null, $stub->toArray());
     }
 
     public function testToJson()

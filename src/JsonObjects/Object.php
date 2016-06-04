@@ -223,12 +223,12 @@ abstract class Object
     /**
      * Get array data.
      *
-     * @return array
+     * @return array|null
      */
     public function toArray()
     {
         if (empty($this->_params)) {
-            return [];
+            return null;
         }
         $result = [];
         foreach ($this->_params as $field => $value) {

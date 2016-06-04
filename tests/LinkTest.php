@@ -152,7 +152,7 @@ class LinkTest extends BaseJsonObjectTestCase
     public function testToArray()
     {
         $object = new Link();
-        $this->assertSame([], $object->toArray());
+        $this->assertSame(null, $object->toArray());
         $object = new Link([], ['href' => 'http://www.skilesdonnelly.biz/aut-accusantium-ut-architecto-sit-et.html', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']]);
         $this->assertSame(['href' => 'http://www.skilesdonnelly.biz/aut-accusantium-ut-architecto-sit-et.html', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']], $object->toArray());
     }

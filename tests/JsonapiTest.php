@@ -171,7 +171,7 @@ class JsonapiTest extends BaseJsonObjectTestCase
     public function testToArray()
     {
         $object = new Jsonapi();
-        $this->assertSame([], $object->toArray());
+        $this->assertSame(null, $object->toArray());
         $object = new Jsonapi([], ['version' => '1.0', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']]);
         $this->assertSame(['version' => '1.0', 'meta' => ['author' => 'Thanh Taro <adamnguyen.itdn@gmail.com>']], $object->toArray());
         $object = new Jsonapi([], ['meta' => (new Meta())->set('author', 'Thanh Taro')]);

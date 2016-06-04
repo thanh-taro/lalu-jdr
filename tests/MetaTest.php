@@ -106,7 +106,7 @@ class MetaTest extends BaseJsonObjectTestCase
     public function testToArray()
     {
         $object = new Meta();
-        $this->assertSame([], $object->toArray());
+        $this->assertSame(null, $object->toArray());
         $object = new Meta([], ['self' => 'http://www.skilesdonnelly.biz/aut-accusantium-ut-architecto-sit-et.html']);
         $this->assertSame(['self' => 'http://www.skilesdonnelly.biz/aut-accusantium-ut-architecto-sit-et.html'], $object->toArray());
     }
