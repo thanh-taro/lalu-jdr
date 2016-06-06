@@ -80,7 +80,7 @@ class JsonResponse
     }
 
     /**
-     * Generate response.
+     * Generate data response.
      *
      * @param \LaLu\JDR\JsonObjects\TopLevel $topLevel
      * @param int|null                       $status
@@ -112,6 +112,39 @@ class JsonResponse
         }
         if ($this->status === 204) {
             return new BaseJsonResponse(null, $this->status, array_merge($this->headers, ['Content-Type' => 'application/vnd.api+json']));
+        }
+
+        return new BaseJsonResponse($content, $this->status, array_merge($this->headers, ['Content-Type' => 'application/vnd.api+json']));
+    }
+
+    /**
+     * Generate errors response.
+     *
+     * @param \LaLu\JDR\JsonObjects\TopLevel $topLevel
+     * @param int|null                       $status
+     * @param array|null                     $headers
+     *
+     * @return Illuminate\Http\JsonResponse
+     */
+    public function generateErrors($topLevel, $status = null, $headers = null)
+    {
+        if ($topLevel !== null && !($topLevel instanceof TopLevel)) {
+            throw new Exception('Wrong parameter for generator', 500);
+        }
+        if ($topLevel instanceof TopLevel) {
+            $topLevel->delete('data');
+            $content = $topLevel->toArray();
+        } else {
+            $content = null;
+        }
+        if ($status !== null) {
+            $this->setStatus($status);
+        }
+        if (!in_array($this->status, static::$HTTP_ERROR_STATUS_CODES)) {
+            $this->setStatus(500);
+        }
+        if ($headers !== null) {
+            $this->setHeaders($headers);
         }
 
         return new BaseJsonResponse($content, $this->status, array_merge($this->headers, ['Content-Type' => 'application/vnd.api+json']));
