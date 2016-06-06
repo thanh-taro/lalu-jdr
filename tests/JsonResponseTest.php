@@ -99,7 +99,7 @@ class JsonResponseTest extends BaseJsonObjectTestCase
         $object = new JsonResponse();
         $object->generateData(['meta' => ['author' => 'Thanh Taro']]);
     }
-    public function testGenerateDatanMethod()
+    public function testGenerateDataMethod()
     {
         $object = new JsonResponse();
         $topLevel = (new TopLevel())->set('data', null)->set('meta', ['author' => 'Thanh Taro']);
