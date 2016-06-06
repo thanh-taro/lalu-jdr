@@ -7,7 +7,7 @@ class Jsonapi extends Object
     /**
      * Get jsonapi struct.
      *
-     * @return array|false
+     * @return string[]|false
      */
     public function getJsonStruct()
     {

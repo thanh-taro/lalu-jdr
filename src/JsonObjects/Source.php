@@ -2,7 +2,7 @@
 
 namespace LaLu\JDR\JsonObjects;
 
-class TopLevel extends Object
+class Source extends Object
 {
     /**
      * Get jsonapi struct.
@@ -12,7 +12,7 @@ class TopLevel extends Object
     public function getJsonStruct()
     {
         if ($this->getVersion() === '1.0') {
-            return ['data', 'errors', 'meta', 'jsonapi', 'links', 'included'];
+            return ['pointer', 'parameter'];
         }
 
         return false;
