@@ -3,10 +3,11 @@
 namespace LaLu\JDR;
 
 use Faker\Factory;
-use \Exception;
+use Exception;
 use Illuminate\Http\JsonResponse as BaseJsonResponse;
 use LaLu\JDR\JsonObjects\TopLevel;
 use LaLu\JDR\JsonObjects\Resource;
+use LaLu\JDR\JsonObjects\Error;
 use Art4\JsonApiClient\Utils\Helper;
 
 class JsonResponseTest extends BaseJsonObjectTestCase
@@ -99,6 +100,18 @@ class JsonResponseTest extends BaseJsonObjectTestCase
         $object = new JsonResponse();
         $object->generateData(['meta' => ['author' => 'Thanh Taro']]);
     }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Wrong parameter for generator
+     * @expectedExceptionCode 500
+     */
+    public function testGenerateErrorsWithExceptionMethod()
+    {
+        $object = new JsonResponse();
+        $object->generateErrors(['meta' => ['author' => 'Thanh Taro']]);
+    }
+
     public function testGenerateDataMethod()
     {
         $object = new JsonResponse();
@@ -126,6 +139,18 @@ class JsonResponseTest extends BaseJsonObjectTestCase
         $this->assertJsonApi($object->generateData(null, null, ['Author' => 'Thanh Taro']), 204, null, ['Author' => 'Thanh Taro']);
 
         $this->assertJsonApi($object->generateData(null, 500), 200, '{}');
+    }
+
+    public function testGenerateErrorsMethod()
+    {
+        $object = new JsonResponse();
+        $topLevel = (new TopLevel())->add('errors', (new Error())->set('title', 'Error'))->set('meta', ['author' => 'Thanh Taro']);
+        $this->assertJsonApi($object->generateErrors($topLevel), 500, '{"errors":[{"title":"Error"}],"meta":{"author":"Thanh Taro"}}', []);
+
+        $this->assertJsonApi($object->generateErrors(null), 500, '{}', []);
+        $this->assertJsonApi($object->generateErrors(null, 400), 400, '{}', []);
+        $this->assertJsonApi($object->generateErrors(null, 200), 500, '{}', []);
+            $this->assertJsonApi($object->generateErrors(null, null, ['Author' => 'Thanh Taro']), 500, '{}', ['Author' => 'Thanh Taro']);
     }
 
     protected function assertJsonApi($response, $status, $expected = null, $headers = [])

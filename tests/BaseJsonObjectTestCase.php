@@ -6,5 +6,5 @@ use PHPUnit_Framework_TestCase;
 
 abstract class BaseJsonObjectTestCase extends PHPUnit_Framework_TestCase
 {
-    const MAX_LOOP = 10000;
+    const MAX_LOOP = 1000;
 }
