@@ -6,6 +6,8 @@ use GrahamCampbell\TestBench\AbstractPackageTestCase;
 use LaLu\JDR\Facades\JDRFacade;
 use Illuminate\Http\JsonResponse as BaseJsonResponse;
 use Art4\JsonApiClient\Utils\Helper;
+use LaLu\JDR\ExceptionHandlers\ExceptionHandler;
+use LaLu\JDR\ExceptionHandlers\LumenExceptionHandler;
 
 abstract class AbstractTestCase extends AbstractPackageTestCase
 {
@@ -33,6 +35,21 @@ abstract class AbstractTestCase extends AbstractPackageTestCase
         return [
             'JDR' => JDRFacade::class,
         ];
+    }
+
+    protected function getLanguage($lang = 'en')
+    {
+        return include __DIR__."/../src/resources/lang/$lang/messages.php";
+    }
+
+    protected function getHandler()
+    {
+        return $this->app->make(ExceptionHandler::class);
+    }
+
+    protected function getLumenHandler()
+    {
+        return $this->app->make(LumenExceptionHandler::class);
     }
 
     protected function assertJsonApi($response, $status, $expected = null, $headers = [])
