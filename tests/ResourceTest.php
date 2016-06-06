@@ -113,7 +113,7 @@ class ResourceTest extends BaseJsonObjectTestCase
     public function testToArray()
     {
         $object = new Resource();
-        $this->assertSame([], $object->toArray());
+        $this->assertSame(null, $object->toArray());
     }
 
     public function testToJson()

@@ -48,6 +48,24 @@ class JsonResponse
     }
 
     /**
+     * Add header.
+     *
+     * @param string $key
+     * @param mixed  $value
+     *
+     * @return $this
+     */
+    public function addHeader($key, $value)
+    {
+        if (empty($this->headers)) {
+            $this->headers = [];
+        }
+        $this->headers[$key] = $value;
+
+        return $this;
+    }
+
+    /**
      * Set status.
      *
      * @param int|string $status
@@ -72,28 +90,28 @@ class JsonResponse
      */
     public function generateData($topLevel, $status = null, $headers = null)
     {
-        if ($topLevel === null) {
-            $this->setStatus(204);
-        }
-        if (!($topLevel instanceof TopLevel)) {
+        if ($topLevel !== null && !($topLevel instanceof TopLevel)) {
             throw new Exception('Wrong parameter for generator', 500);
         }
+        if ($topLevel instanceof TopLevel) {
+            $topLevel->delete('errors');
+            $content = $topLevel->toArray();
+        } else {
+            $content = null;
+        }
         if ($status !== null) {
-            if (!in_array($status, static::$HTTP_SUCCESS_STATUS_CODES)) {
-                $status = 200;
-            }
             $this->setStatus($status);
+        } elseif ($content === null) {
+            $this->setStatus(204);
+        }
+        if (!in_array($this->status, static::$HTTP_SUCCESS_STATUS_CODES)) {
+            $this->setStatus(200);
         }
         if ($headers !== null) {
             $this->setHeaders($headers);
         }
         if ($this->status === 204) {
             return new BaseJsonResponse(null, $this->status, array_merge($this->headers, ['Content-Type' => 'application/vnd.api+json']));
-        }
-        $topLevel->delete('errors');
-        $content = $topLevel->toArray();
-        if (empty($content)) {
-            $content = null;
         }
 
         return new BaseJsonResponse($content, $this->status, array_merge($this->headers, ['Content-Type' => 'application/vnd.api+json']));

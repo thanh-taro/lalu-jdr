@@ -113,7 +113,7 @@ class TopLevelTest extends BaseJsonObjectTestCase
     public function testToArray()
     {
         $object = new TopLevel();
-        $this->assertSame([], $object->toArray());
+        $this->assertSame(null, $object->toArray());
     }
 
     public function testToJson()
