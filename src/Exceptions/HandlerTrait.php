@@ -1,18 +1,22 @@
 <?php
 
-namespace LaLu\JDR\ExceptionHandlers;
+namespace LaLu\JDR\Exceptions;
 
 use Exception;
-use Laravel\Lumen\Exceptions\Handler;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use LaLu\JDR\JsonResponse;
-use LaLu\JDR\JsonObjects\Error;
-use LaLu\JDR\JsonObjects\Source;
-use LaLu\JDR\JsonObjects\TopLevel;
+use LaLu\JDR\JsonObjects\V1_0\Error;
+use LaLu\JDR\JsonObjects\V1_0\Jsonapi;
+use LaLu\JDR\JsonObjects\V1_0\Link;
+use LaLu\JDR\JsonObjects\V1_0\Links;
+use LaLu\JDR\JsonObjects\V1_0\Meta;
+use LaLu\JDR\JsonObjects\V1_0\Resource;
+use LaLu\JDR\JsonObjects\V1_0\Source;
+use LaLu\JDR\JsonObjects\V1_0\TopLevel;
 
-class LumenExceptionHandler extends Handler
+trait HandlerTrait
 {
     public $jsonapiVersion = '1.0';
     public $meta;
@@ -61,7 +65,7 @@ class LumenExceptionHandler extends Handler
         $error = null;
         if ($exception instanceof TokenMismatchException) {
             $status = 406;
-            $error = new Error(['version' => $this->jsonapiVersion], [
+            $error = $this->makeJsonapiObject('error', [
                 'status' => "$status",
                 'title' => $this->trans('lalu-jdr::messages.token_mismatch.title'),
                 'detail' => $this->trans('lalu-jdr::messages.token_mismatch.detail'),
@@ -72,10 +76,10 @@ class LumenExceptionHandler extends Handler
             $messages = $exception->validator->messages();
             foreach ($messages->toArray() as $field => $messageArr) {
                 foreach ($messageArr as $message) {
-                    $error[] = new Error(['version' => $this->jsonapiVersion], [
+                    $error[] = $this->makeJsonapiObject('error', [
                         'title' => $this->trans('lalu-jdr::messages.validation_error.title'),
                         'detail' => $message,
-                        'source' => new Source(['version' => $this->jsonapiVersion], [
+                        'source' => $this->makeJsonapiObject('source', [
                             'pointer' => $field,
                         ]),
                     ]);
@@ -83,7 +87,7 @@ class LumenExceptionHandler extends Handler
             }
         } elseif ($exception instanceof AuthorizationException) {
             $status = 401;
-            $error = new Error(['version' => $this->jsonapiVersion], [
+            $error = $this->makeJsonapiObject('error', [
                 'status' => "$status",
                 'title' => $this->trans('lalu-jdr::messages.authorization_error.title'),
                 'detail' => $this->trans('lalu-jdr::messages.authorization_error.detail'),
@@ -94,7 +98,7 @@ class LumenExceptionHandler extends Handler
                 $status = 500;
             }
             $message = $exception->getMessage();
-            $error = new Error(['version' => $this->jsonapiVersion], [
+            $error = $this->makeJsonapiObject('error', [
                 'status' => "$status",
                 'title' => $this->trans("lalu-jdr::messages.$status.title"),
                 'detail' => empty($message) ? $this->trans("lalu-jdr::messages.$status.detail") : $message,
@@ -107,24 +111,59 @@ class LumenExceptionHandler extends Handler
     /**
      * Make response.
      *
-     * @param \LaLu\JDR\JsonObjects\Error|\LaLu\JDR\JsonObjects\Error[] $error
+     * @param \LaravelSoft\JER\Error $error
      * @param int                    $status
      *
      * @return \Illuminate\Http\JsonResponse
      */
     protected function makeResponse($error, $status = 500)
     {
-        if (is_array($error)) {
-            $topLevel = (new TopLevel(['version' => $this->jsonapiVersion]))->set('errors', $error);
-        } else {
-            $topLevel = (new TopLevel(['version' => $this->jsonapiVersion]))->add('errors', $error);
-        }
+        $topLevel = is_array($error) ? $this->makeJsonapiObject('toplevel')->set('errors', $error) : $this->makeJsonapiObject('toplevel')->add('errors', $error);
         if ($this->meta !== null) {
             $topLevel->set('meta', $this->meta);
         }
-        $topLevel->set('jsonapi', ['version' => $this->jsonapiVersion]);
 
         return (new JsonResponse())->generateErrors($topLevel, $status, $this->headers);
+    }
+
+    /**
+     * Make json object.
+     *
+     * @param string $name
+     * @param array  $params
+     *
+     * @return null|\LaLu\JDR\JsonObjects\Object
+     */
+    protected function makeJsonapiObject($name, $params = [])
+    {
+        if ($this->jsonapiVersion === '1.0') {
+            if ($name === 'error') {
+                return new Error($params);
+            }
+            if ($name === 'toplevel') {
+                return new TopLevel($params);
+            }
+            if ($name === 'meta') {
+                return new Meta($params);
+            }
+            if ($name === 'jsonapi') {
+                return new Jsonapi($params);
+            }
+            if ($name === 'link') {
+                return new Link($params);
+            }
+            if ($name === 'links') {
+                return new Links($params);
+            }
+            if ($name === 'resource') {
+                return new Resource($params);
+            }
+            if ($name === 'source') {
+                return new Source($params);
+            }
+        }
+
+        return;
     }
 
     /**

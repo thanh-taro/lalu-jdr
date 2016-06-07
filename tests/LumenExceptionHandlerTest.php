@@ -2,19 +2,18 @@
 
 namespace LaLu\JDR;
 
-use LaLu\JDR\ExceptionHandlers\LumenExceptionHandler;
 use Exception;
-use JDR;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Auth\Access\AuthorizationException;
+use LaLu\JDR\Exceptions\LumenHandler;
 
 class LumenExceptionHandlerTest extends AbstractTestCase
 {
     public function testAttributes()
     {
-        $this->assertClassHasAttribute('jsonapiVersion', LumenExceptionHandler::class);
-        $this->assertClassHasAttribute('meta', LumenExceptionHandler::class);
-        $this->assertClassHasAttribute('headers', LumenExceptionHandler::class);
+        $this->assertClassHasAttribute('jsonapiVersion', LumenHandler::class);
+        $this->assertClassHasAttribute('meta', LumenHandler::class);
+        $this->assertClassHasAttribute('headers', LumenHandler::class);
     }
 
     public function testBasicRender()

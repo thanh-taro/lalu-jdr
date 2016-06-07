@@ -6,8 +6,8 @@ use GrahamCampbell\TestBench\AbstractPackageTestCase;
 use LaLu\JDR\Facades\JDRFacade;
 use Illuminate\Http\JsonResponse as BaseJsonResponse;
 use Art4\JsonApiClient\Utils\Helper;
-use LaLu\JDR\ExceptionHandlers\ExceptionHandler;
-use LaLu\JDR\ExceptionHandlers\LumenExceptionHandler;
+use LaLu\JDR\Exceptions\Handler;
+use LaLu\JDR\Exceptions\LumenHandler;
 
 abstract class AbstractTestCase extends AbstractPackageTestCase
 {
@@ -44,12 +44,12 @@ abstract class AbstractTestCase extends AbstractPackageTestCase
 
     protected function getHandler()
     {
-        return $this->app->make(ExceptionHandler::class);
+        return $this->app->make(Handler::class);
     }
 
     protected function getLumenHandler()
     {
-        return $this->app->make(LumenExceptionHandler::class);
+        return $this->app->make(LumenHandler::class);
     }
 
     protected function assertJsonApi($response, $status, $expected = null, $headers = [])
@@ -60,12 +60,14 @@ abstract class AbstractTestCase extends AbstractPackageTestCase
         foreach ($headers as $key => $value) {
             $this->assertSame($value, $response->headers->get($key));
         }
-        if ($expected === null) {
-            $this->assertTrue($response->isEmpty());
-            $this->assertSame(204, $response->getStatusCode());
-        } elseif (!empty($response->getContent() !== '{}')) {
-            $this->assertTrue(Helper::isValid($response->getContent()));
-            $this->assertJsonStringEqualsJsonString($expected, $response->getContent());
+        if ($expected !== '{}') {
+            if ($expected === null) {
+                $this->assertTrue($response->isEmpty());
+                $this->assertSame(204, $response->getStatusCode());
+            } else {
+                $this->assertTrue(Helper::isValid($response->getContent()));
+                $this->assertJsonStringEqualsJsonString($expected, $response->getContent());
+            }
         }
     }
 }

@@ -4,7 +4,6 @@ namespace LaLu\JDR\JsonObjects;
 
 abstract class Object
 {
-    protected $_version = '1.0';
     protected $_params = [];
 
     /**
@@ -17,56 +16,13 @@ abstract class Object
     /**
      * Constructor.
      *
-     * @param array $option
+     * @param array $params
      */
-    public function __construct(array $options = [], array $params = [])
+    public function __construct(array $params = [])
     {
-        if (!empty($options)) {
-            $this->loadOptions($options);
-        }
         if (!empty($params)) {
             $this->setParams($params);
         }
-    }
-
-    /**
-     * Load options.
-     *
-     * @param array $option
-     *
-     * @return $this
-     */
-    public function loadOptions(array $options)
-    {
-        if (!empty($options) && array_key_exists('version', $options)) {
-            $this->setVersion($options['version']);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Set jsonapi version.
-     *
-     * @param string $version
-     *
-     * @return $this
-     */
-    public function setVersion($version)
-    {
-        $this->_version = ($version === null) ? null : strval($version);
-
-        return $this;
-    }
-
-    /**
-     * Get jsonapi object version.
-     *
-     * @return string|null
-     */
-    public function getVersion()
-    {
-        return $this->_version === null ? null : $this->_version;
     }
 
     /**
