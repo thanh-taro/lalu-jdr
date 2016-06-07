@@ -40,11 +40,9 @@ class TopLevel extends Object
         $this->data = null;
         if (is_array($model)) {
             foreach ($model as $m) {
-                if ($model instanceof ResourceInterface) {
-                    $this->addModel($m);
-                }
+                $this->addModel($m);
             }
-        } elseif ($model instanceof ResourceInterface) {
+        } else {
             list($resource) = $this->parseModel($model);
             $this->data = $resource;
         }
@@ -84,10 +82,10 @@ class TopLevel extends Object
     public function parseModel(ResourceInterface $model)
     {
         $resource = new Resource([
-            'id' => $model->getJsonapiId(),
-            'type' => $model->getJsonapiType(),
-            'attributes' => $model->getJsonapiAttributes(),
-            'links' => $model->getJsonapiLinks(),
+            'id' => $model->getResourceId(),
+            'type' => $model->getResourceType(),
+            'attributes' => $model->getResourceAttributes(),
+            'links' => $model->getResourceLinks(),
         ]);
 
         return [$resource];
