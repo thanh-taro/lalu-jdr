@@ -43,6 +43,7 @@ class ErrorTest extends BaseJsonObjectTestCase
         $this->assertSame($id, $object->id);
         $this->assertSame(['id' => $id], $object->getParams());
         $this->assertSame(['id' => $id], $object->getParams(['id']));
+        $this->assertSame(['id' => $id, 'status' => null], $object->getParams(['id', 'status']));
 
         $id = $faker->uuid;
         $object = new Error();
