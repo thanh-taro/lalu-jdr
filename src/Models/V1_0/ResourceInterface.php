@@ -4,11 +4,11 @@ namespace LaLu\JDR\Models\V1_0;
 
 interface ResourceInterface
 {
-    public function getJsonapiId();
+    public function getResourceId();
 
-    public function getJsonapiType();
+    public function getResourceType();
 
-    public function getJsonapiAttributes();
+    public function getResourceAttributes();
 
-    public function getJsonapiLinks();
+    public function getResourceLinks();
 }
