@@ -37,14 +37,14 @@ class TopLevel extends Object
      */
     public function setModel($model)
     {
-        $this->data = null;
+        $this->set('data', null);
         if (is_array($model)) {
             foreach ($model as $m) {
                 $this->addModel($m);
             }
         } else {
             list($resource) = $this->parseModel($model);
-            $this->data = $resource;
+            $this->set('data', $resource);
         }
 
         return $this;
@@ -57,17 +57,10 @@ class TopLevel extends Object
      *
      * @return $this
      */
-    public function addModel($model)
+    public function addModel(ResourceInterface $model)
     {
-        if (!is_array($this->data)) {
-            if ($this->data === null || !$this->data instanceof Resource) {
-                $this->data = [];
-            } else {
-                $this->data = [$this->data];
-            }
-        }
         list($resource) = $this->parseModel($model);
-        $this->data[] = $resource;
+        $this->add('data', $resource);
 
         return $this;
     }
