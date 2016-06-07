@@ -1,6 +1,8 @@
 <?php
 
-namespace LaLu\JDR\JsonObjects;
+namespace LaLu\JDR\JsonObjects\V1_0;
+
+use LaLu\JDR\JsonObjects\Object;
 
 class Source extends Object
 {
@@ -11,10 +13,6 @@ class Source extends Object
      */
     public function getJsonStruct()
     {
-        if ($this->getVersion() === '1.0') {
-            return ['pointer', 'parameter'];
-        }
-
-        return false;
+        return ['pointer', 'parameter'];
     }
 }

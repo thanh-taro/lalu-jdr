@@ -2,12 +2,12 @@
 
 namespace LaLu\JDR;
 
-use Faker\Factory;
 use Exception;
+use Faker\Factory;
 use Illuminate\Http\JsonResponse as BaseJsonResponse;
-use LaLu\JDR\JsonObjects\TopLevel;
-use LaLu\JDR\JsonObjects\Resource;
-use LaLu\JDR\JsonObjects\Error;
+use LaLu\JDR\JsonObjects\V1_0\TopLevel;
+use LaLu\JDR\JsonObjects\V1_0\Resource;
+use LaLu\JDR\JsonObjects\V1_0\Error;
 use Art4\JsonApiClient\Utils\Helper;
 
 class JsonResponseTest extends BaseJsonObjectTestCase
@@ -116,12 +116,12 @@ class JsonResponseTest extends BaseJsonObjectTestCase
     {
         $object = new JsonResponse();
         $topLevel = (new TopLevel())->set('data', null)->set('meta', ['author' => 'Thanh Taro']);
-        $this->assertJsonApi($object->generateData($topLevel), 200, '{"data":null,"meta":{"author":"Thanh Taro"}}', []);
-        $topLevel = (new TopLevel())->set('data', (new TopLevel()))->set('meta', ['author' => 'Thanh Taro']);
-        $this->assertJsonApi($object->generateData($topLevel), 200, '{"data":null,"meta":{"author":"Thanh Taro"}}', []);
+        $this->assertJsonApi($object->generateData($topLevel), 200, '{"data":null,"meta":{"author":"Thanh Taro"},"jsonapi":{"version":"1.0"}}', []);
+        $topLevel = (new TopLevel())->set('data', (new Resource()))->set('meta', ['author' => 'Thanh Taro']);
+        $this->assertJsonApi($object->generateData($topLevel), 200, '{"data":null,"meta":{"author":"Thanh Taro"},"jsonapi":{"version":"1.0"}}', []);
         $data = new Resource();
         $topLevel = (new TopLevel())->set('data', $data)->set('meta', ['author' => 'Thanh Taro']);
-        $this->assertJsonApi($object->generateData($topLevel), 200, '{"data":null,"meta":{"author":"Thanh Taro"}}', []);
+        $this->assertJsonApi($object->generateData($topLevel), 200, '{"data":null,"meta":{"author":"Thanh Taro"},"jsonapi":{"version":"1.0"}}', []);
 
         $this->assertJsonApi($object->generateData(null), 204);
         $topLevel = (new TopLevel());
@@ -145,12 +145,12 @@ class JsonResponseTest extends BaseJsonObjectTestCase
     {
         $object = new JsonResponse();
         $topLevel = (new TopLevel())->add('errors', (new Error())->set('title', 'Error'))->set('meta', ['author' => 'Thanh Taro']);
-        $this->assertJsonApi($object->generateErrors($topLevel), 500, '{"errors":[{"title":"Error"}],"meta":{"author":"Thanh Taro"}}', []);
+        $this->assertJsonApi($object->generateErrors($topLevel), 500, '{"errors":[{"title":"Error"}],"meta":{"author":"Thanh Taro"},"jsonapi":{"version":"1.0"}}', []);
 
         $this->assertJsonApi($object->generateErrors(null), 500, '{}', []);
         $this->assertJsonApi($object->generateErrors(null, 400), 400, '{}', []);
         $this->assertJsonApi($object->generateErrors(null, 200), 500, '{}', []);
-            $this->assertJsonApi($object->generateErrors(null, null, ['Author' => 'Thanh Taro']), 500, '{}', ['Author' => 'Thanh Taro']);
+        $this->assertJsonApi($object->generateErrors(null, null, ['Author' => 'Thanh Taro']), 500, '{}', ['Author' => 'Thanh Taro']);
     }
 
     protected function assertJsonApi($response, $status, $expected = null, $headers = [])
@@ -161,12 +161,14 @@ class JsonResponseTest extends BaseJsonObjectTestCase
         foreach ($headers as $key => $value) {
             $this->assertSame($value, $response->headers->get($key));
         }
-        if ($expected === null) {
-            $this->assertTrue($response->isEmpty());
-            $this->assertSame(204, $response->getStatusCode());
-        } elseif (!empty($response->getContent() !== '{}')) {
-            $this->assertTrue(Helper::isValid($response->getContent()));
-            $this->assertJsonStringEqualsJsonString($expected, $response->getContent());
+        if ($expected !== '{}') {
+            if ($expected === null) {
+                $this->assertTrue($response->isEmpty());
+                $this->assertSame(204, $response->getStatusCode());
+            } else {
+                $this->assertTrue(Helper::isValid($response->getContent()));
+                $this->assertJsonStringEqualsJsonString($expected, $response->getContent());
+            }
         }
     }
 }

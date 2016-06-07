@@ -1,9 +1,10 @@
 <?php
 
-namespace LaLu\JDR;
+namespace LaLu\JDR\V1_0;
 
-use LaLu\JDR\JsonObjects\Object;
 use Faker\Factory;
+use LaLu\JDR\BaseJsonObjectTestCase;
+use LaLu\JDR\JsonObjects\Object;
 
 class ObjectTest extends BaseJsonObjectTestCase
 {
@@ -13,7 +14,6 @@ class ObjectTest extends BaseJsonObjectTestCase
         $stub = $this->getMockForAbstractClass(Object::class);
 
         for ($i = 0; $i <= static::MAX_LOOP; ++$i) {
-            $stub->setVersion($faker->text);
             $stub->expects($this->any())
              ->method('getJsonStruct')
              ->will($this->returnValue(false));
@@ -25,72 +25,8 @@ class ObjectTest extends BaseJsonObjectTestCase
     {
         $stub = $this->getMockForAbstractClass(Object::class);
 
-        $this->assertClassHasAttribute('_version', Object::class);
         $this->assertClassHasAttribute('_params', Object::class);
-        $this->assertAttributeEquals('1.0', '_version', $stub);
         $this->assertAttributeEquals([], '_params', $stub);
-    }
-
-    public function testLoadOptionsMethod()
-    {
-        $faker = Factory::create();
-        $stub = $this->getMockForAbstractClass(Object::class);
-
-        $this->assertSame($stub, $stub->loadOptions([]));
-        $this->assertSame('1.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->loadOptions([
-            'version' => '1.0',
-        ]));
-        $this->assertSame('1.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->loadOptions([
-            'version' => '2.0',
-        ]));
-        $this->assertSame('2.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->loadOptions([
-            'foo' => 'bar',
-        ]));
-        $this->assertSame('2.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->loadOptions([
-            'foo' => null,
-        ]));
-        $this->assertSame('2.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->loadOptions([
-            'foo' => PHP_INT_MAX,
-        ]));
-        $this->assertSame('2.0', $stub->getVersion());
-        for ($i = 0; $i <= static::MAX_LOOP; ++$i) {
-            $this->assertSame($stub, $stub->loadOptions([
-                $faker->word => $faker->text,
-            ]));
-            $this->assertSame('2.0', $stub->getVersion());
-        }
-    }
-
-    public function testSetGetVersionMethod()
-    {
-        $faker = Factory::create();
-        $stub = $this->getMockForAbstractClass(Object::class);
-
-        $this->assertSame($stub, $stub->setVersion(null));
-        $this->assertSame(null, $stub->getVersion());
-        $this->assertSame($stub, $stub->setVersion('1.0'));
-        $this->assertSame('1.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->setVersion('2.0'));
-        $this->assertSame('2.0', $stub->getVersion());
-        $this->assertSame($stub, $stub->setVersion(1));
-        $this->assertSame('1', $stub->getVersion());
-        $this->assertSame($stub, $stub->setVersion('foo'));
-        $this->assertSame('foo', $stub->getVersion());
-        for ($i = 0; $i <= static::MAX_LOOP; ++$i) {
-            $version = $faker->text;
-            $this->assertSame($stub, $stub->setVersion($version));
-            $this->assertSame($version, $stub->getVersion());
-            $version = $faker->randomNumber;
-            $this->assertSame($stub, $stub->setVersion($version));
-            $this->assertSame(strval($version), $stub->getVersion());
-        }
-        $this->assertSame($stub, $stub->setVersion(PHP_INT_MAX));
-        $this->assertSame(strval(PHP_INT_MAX), $stub->getVersion());
     }
 
     public function testGetMagicMethod()

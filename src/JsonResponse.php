@@ -3,7 +3,7 @@
 namespace LaLu\JDR;
 
 use Exception;
-use LaLu\JDR\JsonObjects\TopLevel;
+use LaLu\JDR\JsonObjects\V1_0\TopLevel;
 use Illuminate\Http\JsonResponse as BaseJsonResponse;
 
 class JsonResponse
