@@ -184,13 +184,13 @@ abstract class Object
     public function toArray()
     {
         if (empty($this->_params)) {
-            return null;
+            return;
         }
         $result = [];
         foreach ($this->_params as $field => $value) {
             if ($value instanceof self) {
                 $result[$field] = $value->toArray();
-            } elseif (is_array($value)) {
+            } elseif (is_array($value) && !empty($value)) {
                 foreach ($value as $key => $val) {
                     $result[$field][$key] = ($val instanceof self) ? $val->toArray() : $val;
                 }

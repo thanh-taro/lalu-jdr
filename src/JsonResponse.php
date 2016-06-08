@@ -82,13 +82,13 @@ class JsonResponse
     /**
      * Generate data response.
      *
-     * @param \LaLu\JDR\JsonObjects\TopLevel $topLevel
-     * @param int|null                       $status
-     * @param array|null                     $headers
+     * @param \LaLu\JDR\JsonObjects\TopLevel|null $topLevel
+     * @param int|null                            $status
+     * @param array|null                          $headers
      *
      * @return Illuminate\Http\JsonResponse
      */
-    public function generateData($topLevel, $status = null, $headers = null)
+    public function generateData($topLevel = null, $status = null, $headers = null)
     {
         if ($topLevel !== null && !($topLevel instanceof TopLevel)) {
             throw new Exception('Wrong parameter for generator', 500);
@@ -120,13 +120,13 @@ class JsonResponse
     /**
      * Generate errors response.
      *
-     * @param \LaLu\JDR\JsonObjects\TopLevel $topLevel
-     * @param int|null                       $status
-     * @param array|null                     $headers
+     * @param \LaLu\JDR\JsonObjects\TopLevel|null $topLevel
+     * @param int|null                            $status
+     * @param array|null                          $headers
      *
      * @return Illuminate\Http\JsonResponse
      */
-    public function generateErrors($topLevel, $status = null, $headers = null)
+    public function generateErrors($topLevel = null, $status = null, $headers = null)
     {
         if ($topLevel !== null && !($topLevel instanceof TopLevel)) {
             throw new Exception('Wrong parameter for generator', 500);
