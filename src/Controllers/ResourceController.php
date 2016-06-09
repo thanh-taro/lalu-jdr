@@ -31,7 +31,7 @@ class ResourceController extends Controller
         $params = $request->only('page');
         $pageSize = isset($params['page']['size']) ? intval($params['page']['size']) : 10;
         $pageNumber = isset($params['page']['number']) ? intval($params['page']['number']) : 1;
-        $collections = call_user_func_array($this->modelClass, 'paginate', [$pageSize, ['*'], 'page[number]', $pageNumber]);
+        $collections = call_user_func_array([$this->modelClass, 'paginate'], [$pageSize, ['*'], 'page[number]', $pageNumber]);
 
         return JDR::generateData(Helper::makeJsonapiObject($this->jsonapiVersion, 'toplevel')->setPagination($collections));
     }
@@ -69,7 +69,7 @@ class ResourceController extends Controller
             abort(500, 'Missing or invalid model class for ResourceController');
         }
         $this->beforeShow($request, $id);
-        $model = call_user_func_array($this->modelClass, 'findOrFail', [$id]);
+        $model = call_user_func_array([$this->modelClass, 'findOrFail'], [$id]);
 
         return JDR::generateData(Helper::makeJsonapiObject($this->jsonapiVersion, 'toplevel')->setModel($model));
     }
@@ -88,7 +88,7 @@ class ResourceController extends Controller
             abort(500, 'Missing or invalid model class for ResourceController');
         }
         $this->beforeUpdate($request, $id);
-        $model = call_user_func_array($this->modelClass, 'findOrFail', [$id]);
+        $model = call_user_func_array([$this->modelClass, 'findOrFail'], [$id]);
         $model->update($request->all());
 
         return JDR::generateData();
@@ -108,7 +108,7 @@ class ResourceController extends Controller
             abort(500, 'Missing or invalid model class for ResourceController');
         }
         $this->beforeDestroy($request, $id);
-        $model = call_user_func_array($this->modelClass, 'findOrFail', [$id]);
+        $model = call_user_func_array([$this->modelClass, 'findOrFail'], [$id]);
         $model->delete();
 
         return JDR::generateData();
