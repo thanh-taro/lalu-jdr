@@ -24,10 +24,14 @@ class ResourceController extends Controller
      */
     public function index(Request $request)
     {
+        if (empty($this->modelClass) || !class_exists($this->modelClass)) {
+            abort(500, 'Missing or invalid model class for ResourceController');
+        }
+        $this->beforeIndex($request);
+
         $this->validate($request, [
             'page.size' => 'integer|min:0',
         ]);
-
         $params = $request->only('page');
         $pageSize = isset($params['page']['size']) ? intval($params['page']['size']) : 10;
         $pageNumber = isset($params['page']['number']) ? intval($params['page']['number']) : 1;
