@@ -31,11 +31,21 @@ class ResourceController extends Controller
 
         $this->validate($request, [
             'page.size' => 'integer|min:0',
+            'page.number' => 'integer|min:1',
         ]);
-        $params = $request->only('page');
-        $pageSize = isset($params['page']['size']) ? intval($params['page']['size']) : 10;
+        $params = $request->only('page', 'q');
+        $pageSize = isset($params['page']['size']) ? intval($params['page']['size']) : 15;
         $pageNumber = isset($params['page']['number']) ? intval($params['page']['number']) : 1;
-        $collections = call_user_func_array([$this->modelClass, 'paginate'], [$pageSize, ['*'], 'page[number]', $pageNumber]);
+
+        if (empty($params['q'])) {
+            $collections = call_user_func_array([$this->modelClass, 'paginate'], [$pageSize, ['*'], 'page[number]', $pageNumber]);
+        } else {
+            $builder = call_user_func([$this->modelClass, 'query']);
+            foreach ((new $this->modelClass())->getSearchable() as $column) {
+                $builder->orWhere($column, 'LIKE', "%{$params['q']}%");
+            }
+            $collections = $builder->paginate($pageSize, ['*'], 'page[number]', $pageNumber);
+        }
 
         return JDR::generateData(Helper::makeJsonapiObject($this->jsonapiVersion, 'toplevel')->setPagination($collections));
     }

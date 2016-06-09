@@ -11,4 +11,6 @@ interface ResourceInterface
     public function getResourceAttributes();
 
     public function getResourceLinks();
+
+    public function getSearchable();
 }
