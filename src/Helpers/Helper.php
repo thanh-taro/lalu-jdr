@@ -110,6 +110,9 @@ class Helper
 
     public static function arrayDot($array)
     {
+        if (empty($array)) {
+            return [];
+        }
         $ritit = new RecursiveIteratorIterator(new RecursiveArrayIterator($array));
         $result = [];
         foreach ($ritit as $leafValue) {
