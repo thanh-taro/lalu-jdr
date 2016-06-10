@@ -67,7 +67,7 @@ class ResourceController extends Controller
 
         // gets pagination values
         $pageSize = isset($paramsDot[$pageSizeKey]) ? intval($paramsDot[$pageSizeKey]) : $this->defaultPageSize;
-        $pageNumber = isset($paramsDot[$pageNumKey]) ? intval($paramsDot[$pageNumKey]) : $this->defaultPageNumber;
+        $pageNumber = isset($paramsDot[$pageNumberKey]) ? intval($paramsDot[$pageNumberKey]) : $this->defaultPageNumber;
 
         // searchs
         if (empty($params['q'])) {
