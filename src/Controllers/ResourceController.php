@@ -14,8 +14,8 @@ class ResourceController extends Controller
 
     public $jsonapiVersion = '1.0';
     public $modelClass;
-    public $pageSizeParams = 'page[size]';
-    public $pageNumberParams = 'page[number]';
+    public $pageSizeParam = 'page[size]';
+    public $pageNumberParam = 'page[number]';
     public $defaultPageSize = 15;
     public $defaultPageNumber = 1;
 
@@ -34,28 +34,28 @@ class ResourceController extends Controller
         $this->beforeIndex($request);
 
         // makes default
-        if (empty($this->pageSizeParams)) {
-            $this->pageSizeParams = 'page[size]';
+        if (empty($this->pageSizeParam)) {
+            $this->pageSizeParam = 'page[size]';
         }
-        if (empty($this->pageNumberParams)) {
-            $this->pageNumberParams = 'page[number]';
+        if (empty($this->pageNumberParam)) {
+            $this->pageNumberParam = 'page[number]';
         }
 
         // validates configuration
-        if ($this->pageSizeParams === $this->pageNumberParams || $this->defaultPageSize < 0 || $this->defaultPageNumber < 1) {
+        if ($this->pageSizeParam === $this->pageNumberParam || $this->defaultPageSize < 0 || $this->defaultPageNumber < 1) {
             abort(500, Helper::trans('lalu-jdr::messages.rc.wrong.pageparams'));
         }
 
         // makes validation rules array
-        parse_str($this->pageSizeParams, $pageSizeParams);
-        $pageSizeParams = Helper::arrayDot($pageSizeParams);
-        $pageSizeKey = array_keys($pageSizeParams)[0];
+        parse_str($this->pageSizeParam, $pageSizeParam);
+        $pageSizeParam = Helper::arrayDot($pageSizeParam);
+        $pageSizeKey = array_keys($pageSizeParam)[0];
         $validationRules = [
             $pageSizeKey => 'integer|min:0',
         ];
-        parse_str($this->pageNumberParams, $pageNumberParams);
-        $pageNumberParams = Helper::arrayDot($pageNumberParams);
-        $pageNumberKey = array_keys($pageNumberParams)[0];
+        parse_str($this->pageNumberParam, $pageNumberParam);
+        $pageNumberParam = Helper::arrayDot($pageNumberParam);
+        $pageNumberKey = array_keys($pageNumberParam)[0];
         $validationRules[$pageNumberKey] = 'integer|min:1';
 
         // validates page params
@@ -71,14 +71,14 @@ class ResourceController extends Controller
 
         // searchs
         if (empty($params['q'])) {
-            $collections = call_user_func_array([$this->modelClass, 'paginate'], [$pageSize, ['*'], 'page[number]', $pageNumber]);
+            $collections = call_user_func_array([$this->modelClass, 'paginate'], [$pageSize, ['*'], $this->pageNumberParam, $pageNumber]);
         } else {
             $searchString = Helper::escapeSearchString($params['q']);
             $builder = call_user_func([$this->modelClass, 'query']);
             foreach ((new $this->modelClass())->getSearchable() as $column) {
                 $builder->orWhere($column, 'LIKE', "%$searchString%");
             }
-            $collections = $builder->paginate($pageSize, ['*'], 'page[number]', $pageNumber);
+            $collections = $builder->paginate($pageSize, ['*'], $this->pageNumberParam, $pageNumber);
         }
 
         return JDR::generateData(Helper::makeJsonapiObject($this->jsonapiVersion, 'toplevel')->setPagination($collections));
