@@ -55,4 +55,6 @@ return [
     'token_mismatch.detail' => 'The given token is mismatch',
     'authorization_error.title' => 'Unauthorized',
     'authorization_error.detail' => 'Authentication is required and has failed or has not yet been provided.',
+    'rc.invalid.model' => 'Missing or invalid model class for ResourceController',
+    'rc.wrong.pageparams' => 'Wrong pagination parameters',
 ];

@@ -14,6 +14,10 @@ class ResourceController extends Controller
 
     public $jsonapiVersion = '1.0';
     public $modelClass;
+    public $pageSizeParams = 'page[size]';
+    public $pageNumberParams = 'page[number]';
+    public $defaultPageSize = 15;
+    public $defaultPageNumber = 1;
 
     /**
      * Display a listing of the resource.
@@ -25,24 +29,54 @@ class ResourceController extends Controller
     public function index(Request $request)
     {
         if (empty($this->modelClass) || !class_exists($this->modelClass)) {
-            abort(500, 'Missing or invalid model class for ResourceController');
+            abort(500, Helper::trans('lalu-jdr::messages.rc.invalid.model'));
         }
         $this->beforeIndex($request);
 
-        $this->validate($request, [
-            'page.size' => 'integer|min:0',
-            'page.number' => 'integer|min:1',
-        ]);
-        $params = $request->only('page', 'q');
-        $pageSize = isset($params['page']['size']) ? intval($params['page']['size']) : 15;
-        $pageNumber = isset($params['page']['number']) ? intval($params['page']['number']) : 1;
+        // makes default
+        if (empty($this->pageSizeParams)) {
+            $this->pageSizeParams = 'page[size]';
+        }
+        if (empty($this->pageNumberParams)) {
+            $this->pageNumberParams = 'page[number]';
+        }
 
+        // validates configuration
+        if ($this->pageSizeParams === $this->pageNumberParams || $this->defaultPageSize < 0 || $this->defaultPageNumber < 1) {
+            abort(500, Helper::trans('lalu-jdr::messages.rc.wrong.pageparams'));
+        }
+
+        // makes validation rules array
+        parse_str($this->pageSizeParams, $pageSizeParams);
+        $pageSizeParams = Helper::arrayDot($pageSizeParams);
+        $pageSizeKey = array_keys($pageSizeParams)[0];
+        $validationRules = [
+            $pageSizeKey => 'integer|min:0',
+        ];
+        parse_str($this->pageNumberParams, $pageNumberParams);
+        $pageNumberParams = Helper::arrayDot($pageNumberParams);
+        $pageNumberKey = array_keys($pageNumberParams)[0];
+        $validationRules[$pageNumberKey] = 'integer|min:1';
+
+        // validates page params
+        $this->validate($request, $validationRules);
+
+        // gets only the params we need
+        $params = $request->only('page', 'q');
+        $paramsDot = Helper::arrayDot($params);
+
+        // gets pagination values
+        $pageSize = isset($paramsDot[$pageSizeKey]) ? intval($paramsDot[$pageSizeKey]) : $this->defaultPageSize;
+        $pageNumber = isset($paramsDot[$pageNumKey]) ? intval($paramsDot[$pageNumKey]) : $this->defaultPageNumber;
+
+        // searchs
         if (empty($params['q'])) {
             $collections = call_user_func_array([$this->modelClass, 'paginate'], [$pageSize, ['*'], 'page[number]', $pageNumber]);
         } else {
+            $searchString = Helper::escapeSearchString($params['q']);
             $builder = call_user_func([$this->modelClass, 'query']);
             foreach ((new $this->modelClass())->getSearchable() as $column) {
-                $builder->orWhere($column, 'LIKE', "%{$params['q']}%");
+                $builder->orWhere($column, 'LIKE', "%$searchString%");
             }
             $collections = $builder->paginate($pageSize, ['*'], 'page[number]', $pageNumber);
         }
@@ -60,7 +94,7 @@ class ResourceController extends Controller
     public function store(Request $request)
     {
         if (empty($this->modelClass) || !class_exists($this->modelClass)) {
-            abort(500, 'Missing or invalid model class for ResourceController');
+            abort(500, Helper::trans('lalu-jdr::messages.rc.invalid.model'));
         }
         $this->beforeStore($request);
         $model = new $this->modalClass($request->all());
@@ -80,7 +114,7 @@ class ResourceController extends Controller
     public function show(Request $request, $id)
     {
         if (empty($this->modelClass) || !class_exists($this->modelClass)) {
-            abort(500, 'Missing or invalid model class for ResourceController');
+            abort(500, Helper::trans('lalu-jdr::messages.rc.invalid.model'));
         }
         $this->beforeShow($request, $id);
         $model = call_user_func_array([$this->modelClass, 'findOrFail'], [$id]);
@@ -99,7 +133,7 @@ class ResourceController extends Controller
     public function update(Request $request, $id)
     {
         if (empty($this->modelClass) || !class_exists($this->modelClass)) {
-            abort(500, 'Missing or invalid model class for ResourceController');
+            abort(500, Helper::trans('lalu-jdr::messages.rc.invalid.model'));
         }
         $this->beforeUpdate($request, $id);
         $model = call_user_func_array([$this->modelClass, 'findOrFail'], [$id]);
@@ -119,7 +153,7 @@ class ResourceController extends Controller
     public function destroy(Request $request, $id)
     {
         if (empty($this->modelClass) || !class_exists($this->modelClass)) {
-            abort(500, 'Missing or invalid model class for ResourceController');
+            abort(500, Helper::trans('lalu-jdr::messages.rc.invalid.model'));
         }
         $this->beforeDestroy($request, $id);
         $model = call_user_func_array([$this->modelClass, 'findOrFail'], [$id]);

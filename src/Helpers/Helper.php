@@ -2,6 +2,8 @@
 
 namespace LaLu\JDR\Helpers;
 
+use RecursiveArrayIterator;
+use RecursiveIteratorIterator;
 use LaLu\JDR\JsonObjects\V1_0\Error;
 use LaLu\JDR\JsonObjects\V1_0\Jsonapi;
 use LaLu\JDR\JsonObjects\V1_0\Link;
@@ -89,5 +91,35 @@ class Helper
         }
 
         return app()->basePath().DIRECTORY_SEPARATOR.'resources'.($path ? DIRECTORY_SEPARATOR.$path : $path);
+    }
+
+    /**
+     * Escape string for search in SQL.
+     *
+     * @param string @string
+     *
+     * @return string
+     */
+    public static function escapeSearchString($string)
+    {
+        $search = ['%', '_'];
+        $replace = ['\%', '\_'];
+
+        return str_replace($search, $replace, $string);
+    }
+
+    public static function arrayDot($array)
+    {
+        $ritit = new RecursiveIteratorIterator(new RecursiveArrayIterator($array));
+        $result = [];
+        foreach ($ritit as $leafValue) {
+            $keys = [];
+            foreach (range(0, $ritit->getDepth()) as $depth) {
+                $keys[] = $ritit->getSubIterator($depth)->key();
+            }
+            $result[ implode('.', $keys) ] = $leafValue;
+        }
+
+        return $result;
     }
 }
