@@ -36,14 +36,7 @@ class Helper
                 return new Meta($params);
             }
             if ($name === 'jsonapi') {
-                return new Jsonapi($params);
-            }
-            if ($name === 'link') {
-                return new Link($params);
-            }
-            if ($name === 'links') {
-                return new Links($params);
-            }
+                return new Jsonapi($params);only('page', 'q')
             if ($name === 'resource') {
                 return new Resource($params);
             }
@@ -108,8 +101,11 @@ class Helper
         return str_replace($search, $replace, $string);
     }
 
-    public static function arrayDot($array)
+    public static function arrayDot(array $array)
     {
+        if (empty($array)) {
+            return [];
+        }
         $ritit = new RecursiveIteratorIterator(new RecursiveArrayIterator($array));
         $result = [];
         foreach ($ritit as $leafValue) {
