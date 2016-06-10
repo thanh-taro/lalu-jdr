@@ -62,7 +62,7 @@ class ResourceController extends Controller
         $this->validate($request, $validationRules);
 
         // gets only the params we need
-        $params = $request->only('page', 'q');
+        $params = $request->all();
         $paramsDot = Helper::arrayDot($params);
 
         // gets pagination values
