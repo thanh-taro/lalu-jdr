@@ -97,7 +97,7 @@ class ResourceController extends Controller
             abort(500, Helper::trans('lalu-jdr::messages.rc.invalid.model'));
         }
         $this->beforeStore($request);
-        $model = new $this->modalClass($request->all());
+        $model = new $this->modelClass($request->all());
         $model->saveOrFail();
 
         return JDR::generateData(Helper::makeJsonapiObject($this->jsonapiVersion, 'toplevel')->setModel($model), 201);
