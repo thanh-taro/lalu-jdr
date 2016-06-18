@@ -46,7 +46,7 @@ class TopLevel extends Object
             list($resource, $includes) = $this->parseModel($model);
             $this->set('data', $resource);
             if (!empty($includes)) {
-                $this->set('includes', $includes);
+                $this->set('included', $includes);
             }
         }
 
@@ -65,7 +65,7 @@ class TopLevel extends Object
         list($resource, $includes) = $this->parseModel($model);
         $this->add('data', $resource);
         if (!empty($includes)) {
-            $this->set('includes', $includes);
+            $this->set('included', $includes);
         }
 
         return $this;
@@ -113,6 +113,7 @@ class TopLevel extends Object
                 if (!is_array($relationshipModels)) {
                     $relationshipModels = [$relationshipModels];
                 }
+                $relationshipResources = [];
                 foreach ($relationshipModels as $relationshipModel) {
                     $relationshipResource = new Resource([
                         'id' => $relationshipModel->getResourceId(),
@@ -126,9 +127,10 @@ class TopLevel extends Object
                     if (!empty($relationshipLinks)) {
                         $relationshipResource->set('links', $relationshipLinks);
                     }
-                    $resource->add('relationships', $relationshipResource->getParams(['id', 'type']), $key);
+                    $relationshipResources[] = $relationshipResource->getParams(['id', 'type']);
                     $includes[] = $relationshipResource;
                 }
+                $resource->add('relationships', $relationshipResources, $key);
             }
         }
 
