@@ -109,21 +109,26 @@ class TopLevel extends Object
         }
         $relationships = $model->getRelationships();
         if (!empty($relationships)) {
-            foreach ($relationships as $key => $relationshipModel) {
-                $relationshipResource = new Resource([
-                    'id' => $relationshipModel->getResourceId(),
-                    'type' => $relationshipModel->getResourceType(),
-                ]);
-                $relationshipAttributes = $relationshipModel->getResourceAttributes();
-                if (!empty($relationshipAttributes)) {
-                    $relationshipResource->set('attributes', $relationshipAttributes);
+            foreach ($relationships as $key => $relationshipModels) {
+                if (!is_array($relationshipModels)) {
+                    $relationshipModels = [$relationshipModels];
                 }
-                $relationshipLinks = $relationshipModel->getResourceLinks();
-                if (!empty($relationshipLinks)) {
-                    $relationshipResource->set('links', $relationshipLinks);
+                foreach ($relationshipModels as $relationshipModel) {
+                    $relationshipResource = new Resource([
+                        'id' => $relationshipModel->getResourceId(),
+                        'type' => $relationshipModel->getResourceType(),
+                    ]);
+                    $relationshipAttributes = $relationshipModel->getResourceAttributes();
+                    if (!empty($relationshipAttributes)) {
+                        $relationshipResource->set('attributes', $relationshipAttributes);
+                    }
+                    $relationshipLinks = $relationshipModel->getResourceLinks();
+                    if (!empty($relationshipLinks)) {
+                        $relationshipResource->set('links', $relationshipLinks);
+                    }
+                    $resource->add('relationships', $relationshipResource->getParams(['id', 'type']), $key);
+                    $includes[] = $relationshipResource;
                 }
-                $resource->add('relationships', $relationshipResource->getParams(['id', 'type']), $key);
-                $includes[] = $relationshipResource;
             }
         }
 
