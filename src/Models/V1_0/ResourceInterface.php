@@ -13,4 +13,11 @@ interface ResourceInterface
     public function getResourceLinks();
 
     public function getSearchable();
+
+    /**
+     * Get relationship models
+     *
+     * @return ResourceInterface[]
+     */
+    public function getRelationships();
 }

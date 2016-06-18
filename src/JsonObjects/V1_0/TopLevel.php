@@ -43,8 +43,11 @@ class TopLevel extends Object
                 $this->addModel($m);
             }
         } else {
-            list($resource) = $this->parseModel($model);
+            list($resource, $includes) = $this->parseModel($model);
             $this->set('data', $resource);
+            if (!empty($includes)) {
+                $this->set('includes', $includes);
+            }
         }
 
         return $this;
@@ -59,8 +62,11 @@ class TopLevel extends Object
      */
     public function addModel($model)
     {
-        list($resource) = $this->parseModel($model);
+        list($resource, $includes) = $this->parseModel($model);
         $this->add('data', $resource);
+        if (!empty($includes)) {
+            $this->set('includes', $includes);
+        }
 
         return $this;
     }
@@ -82,12 +88,13 @@ class TopLevel extends Object
     /**
      * Parse a model.
      *
-     * @param mixed $model
+     * @param \LaLu\JDR\Models\V1_0\ResourceInterface $model
      *
      * @return array
      */
     public function parseModel($model)
     {
+        $includes = [];
         $resource = new Resource([
             'id' => $model->getResourceId(),
             'type' => $model->getResourceType(),
@@ -100,8 +107,27 @@ class TopLevel extends Object
         if (!empty($links)) {
             $resource->set('links', $links);
         }
+        $relationships = $model->getRelationships();
+        if (!empty($relationships)) {
+            foreach ($relationships as $key => $relationshipModel) {
+                $relationshipResource = new Resource([
+                    'id' => $relationshipModel->getResourceId(),
+                    'type' => $relationshipModel->getResourceType(),
+                ]);
+                $relationshipAttributes = $relationshipModel->getResourceAttributes();
+                if (!empty($relationshipAttributes)) {
+                    $relationshipResource->set('attributes', $relationshipAttributes);
+                }
+                $relationshipLinks = $relationshipModel->getResourceLinks();
+                if (!empty($relationshipLinks)) {
+                    $relationshipResource->set('links', $relationshipLinks);
+                }
+                $resource->add('relationships', $relationshipResource->getParams(['id', 'type']), $key);
+                $includes[] = $relationshipResource;
+            }
+        }
 
-        return [$resource];
+        return [$resource, $includes];
     }
 
     public function parsePagination(AbstractPaginator $collections)
