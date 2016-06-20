@@ -145,30 +145,26 @@ class TopLevel extends Object
                 $relationship = [];
                 $include = [];
                 if (!empty($relationshipArray['meta'])) {
-                    $include['meta'] = $relationshipArray['meta'];
                     $relationship['meta'] = $relationshipArray['meta'];
                 }
-                if (!empty($relationshipArray['links'])) {
-                    $include['links'] = $relationshipArray['links'];
-                    unset($include['links']['self']);
-                    unset($include['links']['related']);
-                    if (!empty($relationshipArray['links']['self'])) {
-                        $relationship['links']['self'] = $relationshipArray['links']['self'];
-                    }
-                    if (!empty($relationshipArray['links']['related'])) {
-                        $relationship['links']['related'] = $relationshipArray['links']['related'];
-                    }
+                if (!empty($relationshipArray['links']['self'])) {
+                    $relationship['links']['self'] = $relationshipArray['links']['self'];
+                }
+                if (!empty($relationshipArray['links']['related'])) {
+                    $relationship['links']['related'] = $relationshipArray['links']['related'];
                 }
                 if (!empty($relationshipArray['data'])) {
-                    $include['data'] = $relationshipArray['data'];
-                    if (array_key_exists($relationshipArray['data'], 'id')) {
-                        $relationship['data']['id'] = $relationshipArray['data']['id'];
-                    }
-                    if (array_key_exists($relationshipArray['data'], 'type')) {
-                        $relationship['data']['type'] = $relationshipArray['data']['type'];
+                    if ($relationshipTopLevel->data instanceof Resource) {
+                        $relationship['data'] = $relationshipTopLevel->data->getParams(['id', 'type']);
+                    } else {
+                        foreach ($relationshipTopLevel->data as $relationshipResource) {
+                            if ($relationshipResource instanceof Resource) {
+                                $relationship['data'][] = $relationshipResource->getParams(['id', 'type']);
+                            }
+                        }
                     }
                 }
-                $includes[] = $include;
+                $includes[] = $relationshipArray['data'];
                 $resource->add('relationships', $relationship, $key);
             }
         }
