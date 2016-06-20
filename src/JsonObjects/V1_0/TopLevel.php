@@ -4,6 +4,7 @@ namespace LaLu\JDR\JsonObjects\V1_0;
 
 use LaLu\JDR\JsonObjects\Object;
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Support\Collection;
 
 class TopLevel extends Object
 {
@@ -71,7 +72,7 @@ class TopLevel extends Object
         return $this;
     }
 
-    public function setPagination($collections)
+    public function setPagination(AbstractPaginator $collections)
     {
         list($resources, $links, $meta) = $this->parsePagination($collections);
         $this->set('data', $resources);
@@ -109,28 +110,15 @@ class TopLevel extends Object
         }
         $relationships = $model->getRelationships();
         if (!empty($relationships)) {
-            foreach ($relationships as $key => $relationshipModels) {
-                if (!is_array($relationshipModels)) {
-                    $relationshipModels = [$relationshipModels];
-                }
-                $relationshipResources = [];
-                foreach ($relationshipModels as $relationshipModel) {
-                    $relationshipResource = new Resource([
-                        'id' => $relationshipModel->getResourceId(),
-                        'type' => $relationshipModel->getResourceType(),
-                    ]);
-                    $relationshipAttributes = $relationshipModel->getResourceAttributes();
-                    if (!empty($relationshipAttributes)) {
-                        $relationshipResource->set('attributes', $relationshipAttributes);
+            foreach ($relationships as $key => $value) {
+                if ($value instanceof AbstractPaginator) {
+
+                } else{
+                    if (if ($value instanceof Collection)) {
+                        $value = $value->all();
                     }
-                    $relationshipLinks = $relationshipModel->getResourceLinks();
-                    if (!empty($relationshipLinks)) {
-                        $relationshipResource->set('links', $relationshipLinks);
-                    }
-                    $relationshipResources[] = $relationshipResource->getParams(['id', 'type']);
-                    $includes[] = $relationshipResource;
+
                 }
-                $resource->add('relationships', $relationshipResources, $key);
             }
         }
 
@@ -157,7 +145,6 @@ class TopLevel extends Object
         }
 
         $linksArr = [
-            'self' => $collections->url($collections->currentPage()),
             'first' => $collections->url(1),
             'prev' => $collections->previousPageUrl(),
             'next' => $collections->nextPageUrl(),
