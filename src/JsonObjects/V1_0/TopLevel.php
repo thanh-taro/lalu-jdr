@@ -4,6 +4,7 @@ namespace LaLu\JDR\JsonObjects\V1_0;
 
 use LaLu\JDR\JsonObjects\Object;
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Support\Collection;
 
 class TopLevel extends Object
 {
@@ -71,7 +72,7 @@ class TopLevel extends Object
         return $this;
     }
 
-    public function setPagination($collections)
+    public function setPagination(AbstractPaginator $collections)
     {
         list($resources, $links, $meta) = $this->parsePagination($collections);
         $this->set('data', $resources);
@@ -109,28 +110,66 @@ class TopLevel extends Object
         }
         $relationships = $model->getRelationships();
         if (!empty($relationships)) {
-            foreach ($relationships as $key => $relationshipModels) {
-                if (!is_array($relationshipModels)) {
-                    $relationshipModels = [$relationshipModels];
-                }
-                $relationshipResources = [];
-                foreach ($relationshipModels as $relationshipModel) {
-                    $relationshipResource = new Resource([
-                        'id' => $relationshipModel->getResourceId(),
-                        'type' => $relationshipModel->getResourceType(),
-                    ]);
-                    $relationshipAttributes = $relationshipModel->getResourceAttributes();
-                    if (!empty($relationshipAttributes)) {
-                        $relationshipResource->set('attributes', $relationshipAttributes);
+            foreach ($relationships as $key => $value) {
+                if ($value instanceof static) {
+                    $relationshipTopLevel = $value;
+                } else {
+                    $relationshipTopLevel = new static();
+                    if (!empty($value['data'])) {
+                        $data = $value['data'];
+                        if ($data instanceof AbstractPaginator) {
+                            $relationshipTopLevel->setPagination($data);
+                        } else{
+                            if ($data instanceof Collection) {
+                                $data = $data->all();
+                            }
+                            $relationshipTopLevel->setModel($data);
+                        }
                     }
-                    $relationshipLinks = $relationshipModel->getResourceLinks();
-                    if (!empty($relationshipLinks)) {
-                        $relationshipResource->set('links', $relationshipLinks);
+                    if (!empty($value['links'])) {
+                        if ($value['links'] instanceof Link) {
+                            $links = $value['links']->getParams(['self', 'related']);
+                        } else {
+                            $links = $value['links'];
+                        }
+                        if (!empty($links['self'])) {
+                            $relationshipTopLevel->add('links', $links['self'], 'self');
+                        }
+                        if (!empty($links['related'])) {
+                            $relationshipTopLevel->add('links', $links['related'], 'related');
+                        }
                     }
-                    $relationshipResources[] = $relationshipResource->getParams(['id', 'type']);
-                    $includes[] = $relationshipResource;
                 }
-                $resource->add('relationships', $relationshipResources, $key);
+                $relationshipTopLevel->delete('jsonapi');
+                $relationshipObject = $relationshipTopLevel->toArray();
+                $relationship = [];
+                $include = [];
+                if (!empty($relationshipObject['meta'])) {
+                    $include['meta'] = $relationshipObject['meta'];
+                    $relationship['meta'] = $relationshipObject['meta'];
+                }
+                if (!empty($relationshipObject['links'])) {
+                    $include['links'] = $relationshipObject['links'];
+                    unset($include['links']['self']);
+                    unset($include['links']['related']);
+                    if (!empty($relationshipObject['links']['self'])) {
+                        $relationship['links']['self'] = $relationshipObject['links']['self'];
+                    }
+                    if (!empty($relationshipObject['links']['related'])) {
+                        $relationship['links']['related'] = $relationshipObject['links']['related'];
+                    }
+                }
+                if (!empty($relationshipObject['data'])) {
+                    $include['data'] = $relationshipObject['data'];
+                    if (array_key_exists($relationshipObject['data'], 'id')) {
+                        $relationship['data']['id'] = $relationshipObject['data']['id'];
+                    }
+                    if (array_key_exists($relationshipObject['data'], 'type')) {
+                        $relationship['data']['type'] = $relationshipObject['data']['type'];
+                    }
+                }
+                $includes[] = $include;
+                $resource->add('relationships', $relationships, $key);
             }
         }
 
@@ -157,7 +196,6 @@ class TopLevel extends Object
         }
 
         $linksArr = [
-            'self' => $collections->url($collections->currentPage()),
             'first' => $collections->url(1),
             'prev' => $collections->previousPageUrl(),
             'next' => $collections->nextPageUrl(),
