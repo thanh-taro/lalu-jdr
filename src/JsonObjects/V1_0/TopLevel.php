@@ -141,35 +141,35 @@ class TopLevel extends Object
                     }
                 }
                 $relationshipTopLevel->delete('jsonapi');
-                $relationshipObject = $relationshipTopLevel->toArray();
+                $relationshipArray = $relationshipTopLevel->toArray();
                 $relationship = [];
                 $include = [];
-                if (!empty($relationshipObject['meta'])) {
-                    $include['meta'] = $relationshipObject['meta'];
-                    $relationship['meta'] = $relationshipObject['meta'];
+                if (!empty($relationshipArray['meta'])) {
+                    $include['meta'] = $relationshipArray['meta'];
+                    $relationship['meta'] = $relationshipArray['meta'];
                 }
-                if (!empty($relationshipObject['links'])) {
-                    $include['links'] = $relationshipObject['links'];
+                if (!empty($relationshipArray['links'])) {
+                    $include['links'] = $relationshipArray['links'];
                     unset($include['links']['self']);
                     unset($include['links']['related']);
-                    if (!empty($relationshipObject['links']['self'])) {
-                        $relationship['links']['self'] = $relationshipObject['links']['self'];
+                    if (!empty($relationshipArray['links']['self'])) {
+                        $relationship['links']['self'] = $relationshipArray['links']['self'];
                     }
-                    if (!empty($relationshipObject['links']['related'])) {
-                        $relationship['links']['related'] = $relationshipObject['links']['related'];
+                    if (!empty($relationshipArray['links']['related'])) {
+                        $relationship['links']['related'] = $relationshipArray['links']['related'];
                     }
                 }
-                if (!empty($relationshipObject['data'])) {
-                    $include['data'] = $relationshipObject['data'];
-                    if (array_key_exists($relationshipObject['data'], 'id')) {
-                        $relationship['data']['id'] = $relationshipObject['data']['id'];
+                if (!empty($relationshipArray['data'])) {
+                    $include['data'] = $relationshipArray['data'];
+                    if (array_key_exists($relationshipArray['data'], 'id')) {
+                        $relationship['data']['id'] = $relationshipArray['data']['id'];
                     }
-                    if (array_key_exists($relationshipObject['data'], 'type')) {
-                        $relationship['data']['type'] = $relationshipObject['data']['type'];
+                    if (array_key_exists($relationshipArray['data'], 'type')) {
+                        $relationship['data']['type'] = $relationshipArray['data']['type'];
                     }
                 }
                 $includes[] = $include;
-                $resource->add('relationships', $relationships, $key);
+                $resource->add('relationships', $relationship, $key);
             }
         }
 
