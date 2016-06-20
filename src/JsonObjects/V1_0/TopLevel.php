@@ -1,186 +1,239 @@
 <?php
 
-namespace App\Models;
+namespace LaLu\JDR\JsonObjects\V1_0;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Auth\Authenticatable;
-use LaLu\JDR\Models\V1_0\ResourceInterface;
+use LaLu\JDR\JsonObjects\Object;
+use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Support\Collection;
 
-class User extends Model implements Authenticatable, ResourceInterface
+class TopLevel extends Object
 {
     /**
-     * The attributes that are mass assignable.
+     * Constructor.
      *
-     * @var array
+     * @param array $params
      */
-    protected $fillable = [
-        'name',
-        'username',
-        'password_hash',
-        'avatar',
-        'description',
-    ];
-
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'password_hash',
-    ];
-
-    /**
-     * Get the name of the unique identifier for the user.
-     *
-     * @return string
-     */
-    public function getAuthIdentifierName()
+    public function __construct(array $params = [])
     {
-        return $this->getKeyName();
+        parent::__construct($params);
+        $this->set('jsonapi', (new Jsonapi(['version' => '1.0'])));
     }
 
     /**
-     * Get the unique identifier for the user.
+     * Get jsonapi struct.
      *
-     * @return mixed
+     * @return string[]|false
      */
-    public function getAuthIdentifier()
+    public function getJsonStruct()
     {
-        return $this->getKey();
+        return ['data', 'errors', 'included', 'links', 'meta', 'jsonapi'];
     }
 
     /**
-     * Get the password for the user.
+     * Set model as data.
      *
-     * @return string
-     */
-    public function getAuthPassword()
-    {
-        return $this->password_hash;
-    }
-
-    /**
-     * Get the token value for the "remember me" session.
+     * @param \LaLu\JDR\Models\V1_0\ResourceInterface|\LaLu\JDR\Models\V1_0\ResourceInterface[] $model
      *
-     * @return string
+     * @return $this
      */
-    public function getRememberToken()
+    public function setModel($model)
     {
-        //
-    }
-
-    /**
-     * Set the token value for the "remember me" session.
-     *
-     * @param string $value
-     */
-    public function setRememberToken($value)
-    {
-        //
-    }
-
-    /**
-     * Get the column name for the "remember me" token.
-     *
-     * @return string
-     */
-    public function getRememberTokenName()
-    {
-        //
-    }
-
-    public function getResourceId()
-    {
-        return $this->getKey();
-    }
-
-    public function getResourceType()
-    {
-        return 'user';
-    }
-
-    public function getResourceAttributes()
-    {
-        return [
-            'username' => $this->username,
-            'name' => $this->name,
-            'avatar' => $this->getAvatarUrl(),
-            'description' => $this->description,
-            'createdAt' => (string)$this->created_at,
-            'updatedAt' => (string)$this->updated_at,
-        ];
-    }
-
-    public function getResourceLinks()
-    {
-        return [
-            'self' => route('v1.users.show', ['id' => $this->getKey()]),
-        ];
-    }
-
-    public static function createUser($username, $password, $name, $avatar = null, $description = null)
-    {
-        $user = new static();
-        $user->name = $name;
-        $user->username = $username;
-        $user->password_hash = bcrypt($password);
-        if (!empty($avatar)) {
-            $user->avatar = $avatar;
-        }
-        if (!empty($description)) {
-            $user->description = $description;
-        }
-        $user->saveOrFail();
-
-        return $user;
-    }
-
-    public function getSearchable()
-    {
-        return [
-            'name',
-            'username',
-            'description',
-        ];
-    }
-
-    public static function getImagePath($dir = null)
-    {
-        return public_path("users/images/$dir");
-    }
-
-    public function getAvatarUrl()
-    {
-        return empty($this->avatar) ? null : url(str_replace(base_path(), '', $this->avatar));
-    }
-
-    public function delete()
-    {
-        $result = parent::delete();
-        if ($result === true && !empty($this->avatar) && file_exists($this->avatar)) {
-            unlink($this->avatar);
+        $this->set('data', null);
+        if (is_array($model)) {
+            foreach ($model as $m) {
+                $this->addModel($m);
+            }
+        } else {
+            list($resource, $includes) = $this->parseModel($model);
+            $this->set('data', $resource);
+            if (!empty($includes)) {
+                $this->set('included', $includes);
+            }
         }
 
-        return $result;
-    }
-
-    public function timelines()
-    {
-        return $this->hasMany(Timeline::class);
+        return $this;
     }
 
     /**
-     * Get relationship models
+     * Add model as data.
      *
-     * @return ResourceInterface[]
+     * @param mixed $model
+     *
+     * @return $this
      */
-    public function getRelationships()
+    public function addModel($model)
     {
-        return [
-            'timelines' => [
-                'data' => $this->timelines()->orderBy('year', 'asc')->orderBy('month', 'asc')->get()
-            ],
+        list($resource, $includes) = $this->parseModel($model);
+        $this->add('data', $resource);
+        if (!empty($includes)) {
+            $this->set('included', $includes);
+        }
+
+        return $this;
+    }
+
+    public function setPagination(AbstractPaginator $collections)
+    {
+        list($resources, $links, $meta) = $this->parsePagination($collections);
+        $this->set('data', $resources);
+        if (!empty($links)) {
+            $this->set('links', $links);
+        }
+        if (!empty($meta)) {
+            $this->set('meta', $meta);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Parse a model.
+     *
+     * @param \LaLu\JDR\Models\V1_0\ResourceInterface $model
+     *
+     * @return array
+     */
+    public function parseModel($model)
+    {
+        $includes = [];
+        $resource = new Resource([
+            'id' => $model->getResourceId(),
+            'type' => $model->getResourceType(),
+        ]);
+        $attributes = $model->getResourceAttributes();
+        if (!empty($attributes)) {
+            $resource->set('attributes', $attributes);
+        }
+        $links = $model->getResourceLinks();
+        if (!empty($links)) {
+            $resource->set('links', $links);
+        }
+        $relationships = $model->getRelationships();
+        if (!empty($relationships)) {
+            foreach ($relationships as $key => $value) {
+                if ($value instanceof static) {
+                    $relationshipTopLevel = $value;
+                } else {
+                    $relationshipTopLevel = new static();
+                    if (!empty($value['data'])) {
+                        $data = $value['data'];
+                        if ($data instanceof AbstractPaginator) {
+                            $relationshipTopLevel->setPagination($data);
+                        } else{
+                            if ($data instanceof Collection) {
+                                $data = $data->all();
+                            }
+                            $relationshipTopLevel->setModel($data);
+                        }
+                    }
+                    if (!empty($value['links'])) {
+                        if ($value['links'] instanceof Link) {
+                            $links = $value['links']->getParams(['self', 'related']);
+                        } else {
+                            $links = $value['links'];
+                        }
+                        if (!empty($links['self'])) {
+                            $relationshipTopLevel->add('links', $links['self'], 'self');
+                        }
+                        if (!empty($links['related'])) {
+                            $relationshipTopLevel->add('links', $links['related'], 'related');
+                        }
+                    }
+                }
+                $relationshipTopLevel->delete('jsonapi');
+                $relationshipArray = $relationshipTopLevel->toArray();
+                $relationship = [];
+                $include = [];
+                if (!empty($relationshipArray['meta'])) {
+                    $relationship['meta'] = $relationshipArray['meta'];
+                }
+                if (!empty($relationshipArray['links']['self'])) {
+                    $relationship['links']['self'] = $relationshipArray['links']['self'];
+                }
+                if (!empty($relationshipArray['links']['related'])) {
+                    $relationship['links']['related'] = $relationshipArray['links']['related'];
+                }
+                if (!empty($relationshipArray['data'])) {
+                    if ($relationshipTopLevel->data instanceof Resource) {
+                        $relationship['data'] = $relationshipTopLevel->data->getParams(['id', 'type']);
+                    } else {
+                        foreach ($relationshipTopLevel->data as $relationshipResource) {
+                            if ($relationshipResource instanceof Resource) {
+                                $relationship['data'][] = $relationshipResource->getParams(['id', 'type']);
+                            }
+                        }
+                    }
+                }
+                $includes[] = $relationshipArray['data'];
+                $resource->add('relationships', $relationship, $key);
+            }
+        }
+
+        return [$resource, $includes];
+    }
+
+    public function parsePagination(AbstractPaginator $collections)
+    {
+        $resources = [];
+        foreach ($collections->items() as $item) {
+            $resource = new Resource([
+                'id' => $item->getResourceId(),
+                'type' => $item->getResourceType(),
+            ]);
+            $itemAttributes = $item->getResourceAttributes();
+            if (!empty($itemAttributes)) {
+                $resource->set('attributes', $itemAttributes);
+            }
+            $itemLinks = $item->getResourceLinks();
+            if (!empty($itemLinks)) {
+                $resource->set('links', $itemLinks);
+            }
+            $resources[] = $resource;
+        }
+
+        $linksArr = [
+            'first' => $collections->url(1),
+            'prev' => $collections->previousPageUrl(),
+            'next' => $collections->nextPageUrl(),
+            'last' => method_exists($collections, 'lastPage') ? $collections->url($collections->lastPage()) : null,
         ];
+        $currentQuery = parse_url(url()->full(), PHP_URL_QUERY);
+        if (!empty($currentQuery)) {
+            parse_str($currentQuery, $queryArr);
+            foreach ($linksArr as $key => $value) {
+                if (!empty($value)) {
+                    $urlQuery = parse_url($value, PHP_URL_QUERY);
+                    if (!empty($urlQuery)) {
+                        parse_str($urlQuery, $urlArr);
+                        foreach ($urlArr as $name => $val) {
+                            if (isset($queryArr[$name]) && is_array($queryArr[$name]) && is_array($val)) {
+                                foreach ($val as $k => $v) {
+                                    $queryArr[$name][$k] = $v;
+                                }
+                            } else {
+                                $queryArr[$name] = $val;
+                            }
+                        }
+                        $linksArr[$key] = url()->current().'?'.http_build_query($queryArr);
+                    }
+                }
+            }
+        }
+        $links = new Links($linksArr);
+
+        $metaArr = [
+            'count' => $collections->count(),
+            'perPage' => $collections->perPage(),
+            'currentPage' => $collections->currentPage(),
+        ];
+        if (method_exists($collections, 'total')) {
+            $metaArr['totalObjects'] = $collections->total();
+        }
+        if (method_exists($collections, 'lastPage')) {
+            $metaArr['totalPages'] = $collections->lastPage();
+        }
+        $meta = new Meta($metaArr);
+
+        return [$resources, $links, $meta];
     }
 }
