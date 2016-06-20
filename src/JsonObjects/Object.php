@@ -173,7 +173,7 @@ abstract class Object
     {
         $jsonStruct = $this->getJsonStruct();
 
-        return (!empty($jsonStruct) && !in_array($field, $jsonStruct)) || empty($this->_params) ? null : (!isset($this->_params[$field]) ? null : $this->_params[$field]);
+        return (!empty($jsonStruct) && !in_array($field, $jsonStruct)) || empty($this->_params) ? null : (isset($this->_params[$field]) ? $this->_params[$field] : null);
     }
 
     /**

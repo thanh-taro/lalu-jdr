@@ -1,243 +1,186 @@
 <?php
 
-namespace LaLu\JDR\JsonObjects\V1_0;
+namespace App\Models;
 
-use LaLu\JDR\JsonObjects\Object;
-use Illuminate\Pagination\AbstractPaginator;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Auth\Authenticatable;
+use LaLu\JDR\Models\V1_0\ResourceInterface;
 
-class TopLevel extends Object
+class User extends Model implements Authenticatable, ResourceInterface
 {
     /**
-     * Constructor.
+     * The attributes that are mass assignable.
      *
-     * @param array $params
+     * @var array
      */
-    public function __construct(array $params = [])
+    protected $fillable = [
+        'name',
+        'username',
+        'password_hash',
+        'avatar',
+        'description',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password_hash',
+    ];
+
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
     {
-        parent::__construct($params);
-        $this->set('jsonapi', (new Jsonapi(['version' => '1.0'])));
+        return $this->getKeyName();
     }
 
     /**
-     * Get jsonapi struct.
+     * Get the unique identifier for the user.
      *
-     * @return string[]|false
+     * @return mixed
      */
-    public function getJsonStruct()
+    public function getAuthIdentifier()
     {
-        return ['data', 'errors', 'included', 'links', 'meta', 'jsonapi'];
+        return $this->getKey();
     }
 
     /**
-     * Set model as data.
+     * Get the password for the user.
      *
-     * @param \LaLu\JDR\Models\V1_0\ResourceInterface|\LaLu\JDR\Models\V1_0\ResourceInterface[] $model
-     *
-     * @return $this
+     * @return string
      */
-    public function setModel($model)
+    public function getAuthPassword()
     {
-        $this->set('data', null);
-        if (is_array($model)) {
-            foreach ($model as $m) {
-                $this->addModel($m);
-            }
-        } else {
-            list($resource, $includes) = $this->parseModel($model);
-            $this->set('data', $resource);
-            if (!empty($includes)) {
-                $this->set('included', $includes);
-            }
-        }
-
-        return $this;
+        return $this->password_hash;
     }
 
     /**
-     * Add model as data.
+     * Get the token value for the "remember me" session.
      *
-     * @param mixed $model
-     *
-     * @return $this
+     * @return string
      */
-    public function addModel($model)
+    public function getRememberToken()
     {
-        list($resource, $includes) = $this->parseModel($model);
-        $this->add('data', $resource);
-        if (!empty($includes)) {
-            $this->set('included', $includes);
-        }
-
-        return $this;
-    }
-
-    public function setPagination(AbstractPaginator $collections)
-    {
-        list($resources, $links, $meta) = $this->parsePagination($collections);
-        $this->set('data', $resources);
-        if (!empty($links)) {
-            $this->set('links', $links);
-        }
-        if (!empty($meta)) {
-            $this->set('meta', $meta);
-        }
-
-        return $this;
+        //
     }
 
     /**
-     * Parse a model.
+     * Set the token value for the "remember me" session.
      *
-     * @param \LaLu\JDR\Models\V1_0\ResourceInterface $model
-     *
-     * @return array
+     * @param string $value
      */
-    public function parseModel($model)
+    public function setRememberToken($value)
     {
-        $includes = [];
-        $resource = new Resource([
-            'id' => $model->getResourceId(),
-            'type' => $model->getResourceType(),
-        ]);
-        $attributes = $model->getResourceAttributes();
-        if (!empty($attributes)) {
-            $resource->set('attributes', $attributes);
-        }
-        $links = $model->getResourceLinks();
-        if (!empty($links)) {
-            $resource->set('links', $links);
-        }
-        $relationships = $model->getRelationships();
-        if (!empty($relationships)) {
-            foreach ($relationships as $key => $value) {
-                if ($value instanceof static) {
-                    $relationshipTopLevel = $value;
-                } else {
-                    $relationshipTopLevel = new static();
-                    if (!empty($value['data'])) {
-                        $data = $value['data'];
-                        if ($data instanceof AbstractPaginator) {
-                            $relationshipTopLevel->setPagination($data);
-                        } else{
-                            if ($data instanceof Collection) {
-                                $data = $data->all();
-                            }
-                            $relationshipTopLevel->setModel($data);
-                        }
-                    }
-                    if (!empty($value['links'])) {
-                        if ($value['links'] instanceof Link) {
-                            $links = $value['links']->getParams(['self', 'related']);
-                        } else {
-                            $links = $value['links'];
-                        }
-                        if (!empty($links['self'])) {
-                            $relationshipTopLevel->add('links', $links['self'], 'self');
-                        }
-                        if (!empty($links['related'])) {
-                            $relationshipTopLevel->add('links', $links['related'], 'related');
-                        }
-                    }
-                }
-                $relationshipTopLevel->delete('jsonapi');
-                $relationshipArray = $relationshipTopLevel->toArray();
-                $relationship = [];
-                $include = [];
-                if (!empty($relationshipArray['meta'])) {
-                    $include['meta'] = $relationshipArray['meta'];
-                    $relationship['meta'] = $relationshipArray['meta'];
-                }
-                if (!empty($relationshipArray['links'])) {
-                    $include['links'] = $relationshipArray['links'];
-                    unset($include['links']['self']);
-                    unset($include['links']['related']);
-                    if (!empty($relationshipArray['links']['self'])) {
-                        $relationship['links']['self'] = $relationshipArray['links']['self'];
-                    }
-                    if (!empty($relationshipArray['links']['related'])) {
-                        $relationship['links']['related'] = $relationshipArray['links']['related'];
-                    }
-                }
-                if (!empty($relationshipArray['data'])) {
-                    $include['data'] = $relationshipArray['data'];
-                    if (array_key_exists($relationshipArray['data'], 'id')) {
-                        $relationship['data']['id'] = $relationshipArray['data']['id'];
-                    }
-                    if (array_key_exists($relationshipArray['data'], 'type')) {
-                        $relationship['data']['type'] = $relationshipArray['data']['type'];
-                    }
-                }
-                $includes[] = $include;
-                $resource->add('relationships', $relationship, $key);
-            }
-        }
-
-        return [$resource, $includes];
+        //
     }
 
-    public function parsePagination(AbstractPaginator $collections)
+    /**
+     * Get the column name for the "remember me" token.
+     *
+     * @return string
+     */
+    public function getRememberTokenName()
     {
-        $resources = [];
-        foreach ($collections->items() as $item) {
-            $resource = new Resource([
-                'id' => $item->getResourceId(),
-                'type' => $item->getResourceType(),
-            ]);
-            $itemAttributes = $item->getResourceAttributes();
-            if (!empty($itemAttributes)) {
-                $resource->set('attributes', $itemAttributes);
-            }
-            $itemLinks = $item->getResourceLinks();
-            if (!empty($itemLinks)) {
-                $resource->set('links', $itemLinks);
-            }
-            $resources[] = $resource;
-        }
+        //
+    }
 
-        $linksArr = [
-            'first' => $collections->url(1),
-            'prev' => $collections->previousPageUrl(),
-            'next' => $collections->nextPageUrl(),
-            'last' => method_exists($collections, 'lastPage') ? $collections->url($collections->lastPage()) : null,
+    public function getResourceId()
+    {
+        return $this->getKey();
+    }
+
+    public function getResourceType()
+    {
+        return 'user';
+    }
+
+    public function getResourceAttributes()
+    {
+        return [
+            'username' => $this->username,
+            'name' => $this->name,
+            'avatar' => $this->getAvatarUrl(),
+            'description' => $this->description,
+            'createdAt' => (string)$this->created_at,
+            'updatedAt' => (string)$this->updated_at,
         ];
-        $currentQuery = parse_url(url()->full(), PHP_URL_QUERY);
-        if (!empty($currentQuery)) {
-            parse_str($currentQuery, $queryArr);
-            foreach ($linksArr as $key => $value) {
-                if (!empty($value)) {
-                    $urlQuery = parse_url($value, PHP_URL_QUERY);
-                    if (!empty($urlQuery)) {
-                        parse_str($urlQuery, $urlArr);
-                        foreach ($urlArr as $name => $val) {
-                            if (isset($queryArr[$name]) && is_array($queryArr[$name]) && is_array($val)) {
-                                foreach ($val as $k => $v) {
-                                    $queryArr[$name][$k] = $v;
-                                }
-                            } else {
-                                $queryArr[$name] = $val;
-                            }
-                        }
-                        $linksArr[$key] = url()->current().'?'.http_build_query($queryArr);
-                    }
-                }
-            }
-        }
-        $links = new Links($linksArr);
+    }
 
-        $metaArr = [
-            'count' => $collections->count(),
-            'perPage' => $collections->perPage(),
-            'currentPage' => $collections->currentPage(),
+    public function getResourceLinks()
+    {
+        return [
+            'self' => route('v1.users.show', ['id' => $this->getKey()]),
         ];
-        if (method_exists($collections, 'total')) {
-            $metaArr['totalObjects'] = $collections->total();
-        }
-        if (method_exists($collections, 'lastPage')) {
-            $metaArr['totalPages'] = $collections->lastPage();
-        }
-        $meta = new Meta($metaArr);
+    }
 
-        return [$resources, $links, $meta];
+    public static function createUser($username, $password, $name, $avatar = null, $description = null)
+    {
+        $user = new static();
+        $user->name = $name;
+        $user->username = $username;
+        $user->password_hash = bcrypt($password);
+        if (!empty($avatar)) {
+            $user->avatar = $avatar;
+        }
+        if (!empty($description)) {
+            $user->description = $description;
+        }
+        $user->saveOrFail();
+
+        return $user;
+    }
+
+    public function getSearchable()
+    {
+        return [
+            'name',
+            'username',
+            'description',
+        ];
+    }
+
+    public static function getImagePath($dir = null)
+    {
+        return public_path("users/images/$dir");
+    }
+
+    public function getAvatarUrl()
+    {
+        return empty($this->avatar) ? null : url(str_replace(base_path(), '', $this->avatar));
+    }
+
+    public function delete()
+    {
+        $result = parent::delete();
+        if ($result === true && !empty($this->avatar) && file_exists($this->avatar)) {
+            unlink($this->avatar);
+        }
+
+        return $result;
+    }
+
+    public function timelines()
+    {
+        return $this->hasMany(Timeline::class);
+    }
+
+    /**
+     * Get relationship models
+     *
+     * @return ResourceInterface[]
+     */
+    public function getRelationships()
+    {
+        return [
+            'timelines' => [
+                'data' => $this->timelines()->orderBy('year', 'asc')->orderBy('month', 'asc')->get()
+            ],
+        ];
     }
 }
