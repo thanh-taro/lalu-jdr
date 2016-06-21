@@ -235,8 +235,12 @@ class TopLevel extends Object
                 if (!empty($relationshipArray['data'])) {
                     $includes[] = $relationshipArray['data'];
                 }
-                if (empty($relationship) && !$isList) {
-                    $relationship = null;
+                if (empty($relationship) || empty($relationship['data'])) {
+                    if ($isList) {
+                        $relationship['data'] = [];
+                    } else {
+                        $relationship['data'] = null;
+                    }
                 }
                 $resource->add('relationships', $relationship, $key);
             }
