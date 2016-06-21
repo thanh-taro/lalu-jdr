@@ -115,11 +115,17 @@ class TopLevel extends Object
                     $relationshipTopLevel = $value;
                 } else {
                     $relationshipTopLevel = new static();
-                    if (!empty($value['data'])) {
+                    if (!is_array($value)) {
+                        $data = $value;
+                    } elseif (!empty($value['data'])) {
                         $data = $value['data'];
+                    } else {
+                        $data = null;
+                    }
+                    if ($data !== null) {
                         if ($data instanceof AbstractPaginator) {
                             $relationshipTopLevel->setPagination($data);
-                        } else{
+                        } else {
                             if ($data instanceof Collection) {
                                 $data = $data->all();
                             }
@@ -164,8 +170,12 @@ class TopLevel extends Object
                         }
                     }
                 }
-                $includes[] = $relationshipArray['data'];
-                $resource->add('relationships', $relationship, $key);
+                if (!empty($relationshipArray['data'])) {
+                    $includes[] = $relationshipArray['data'];
+                }
+                if (!empty($relationship)) {
+                    $resource->add('relationships', $relationship, $key);
+                }
             }
         }
 
