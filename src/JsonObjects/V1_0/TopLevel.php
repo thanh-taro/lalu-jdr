@@ -98,7 +98,7 @@ class TopLevel extends Object
         $this->set('data', null);
         if (is_array($model)) {
             foreach ($model as $m) {
-                $this->addModel($m);
+                $this->addModel($m, $getRelationships);
             }
         } else {
             list($resource, $includes) = $this->parseModel($model, $getRelationships);
