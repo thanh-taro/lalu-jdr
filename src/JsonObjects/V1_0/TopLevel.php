@@ -56,7 +56,7 @@ class TopLevel extends Object
                             $converted[] = new Resource($value);
                         }
                     }
-                    if ($isList) {
+                    if (!$isList) {
                         return empty($converted) ? null : $converted[0];
                     }
 
