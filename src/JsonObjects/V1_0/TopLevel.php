@@ -52,7 +52,9 @@ class TopLevel extends Object
                             $converted[] = $value;
                         } elseif ($key === 'id') {
                             $converted[] = new Resource($params);
+                            break;
                         } else {
+                            $isList = true;
                             $converted[] = new Resource($value);
                         }
                     }
