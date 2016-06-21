@@ -18,7 +18,7 @@ abstract class Object
      *
      * @param array $params
      */
-    public function __construct(array $params = [])
+    public function __construct($params = [])
     {
         if (!empty($params)) {
             $this->setParams($params);
@@ -26,7 +26,7 @@ abstract class Object
     }
 
     /**
-     * Convert param into Jsonapi object
+     * Convert param into Jsonapi object.
      *
      * @param string $field
      * @param mixed  $params
@@ -149,10 +149,25 @@ abstract class Object
             if (empty($this->_params[$field])) {
                 $this->_params[$field] = [];
             }
-            if ($key === null) {
-                $this->_params[$field][] = $this->convert($field, $value);
+            $addArray = [];
+            if (is_array($value)) {
+                foreach ($value as $index => $instance) {
+                    if ($instance instanceof self) {
+                        $addArray[] = $this->convert($field, $instance);
+                    } else {
+                        $addArray[] = $this->convert($field, $value);
+                        break;
+                    }
+                }
             } else {
-                $this->_params[$field][$key] = $this->convert($field, $value);
+                $addArray[] = $this->convert($field, $value);
+            }
+            foreach ($addArray as $add) {
+                if ($key === null) {
+                    $this->_params[$field][] = $add;
+                } else {
+                    $this->_params[$field][$key] = $add;
+                }
             }
         }
 

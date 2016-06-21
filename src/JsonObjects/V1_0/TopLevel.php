@@ -89,7 +89,7 @@ class TopLevel extends Object
      * Set model as data.
      *
      * @param \LaLu\JDR\Models\V1_0\ResourceInterface|\LaLu\JDR\Models\V1_0\ResourceInterface[] $model
-     * @param bool  $getRelationships
+     * @param bool                                                                              $getRelationships
      *
      * @return $this
      */
@@ -104,7 +104,7 @@ class TopLevel extends Object
             list($resource, $includes) = $this->parseModel($model, $getRelationships);
             $this->set('data', $resource);
             if (!empty($includes)) {
-                $this->set('included', $includes);
+                $this->add('included', $includes);
             }
         }
 
@@ -124,7 +124,23 @@ class TopLevel extends Object
         list($resource, $includes) = $this->parseModel($model, $getRelationships);
         $this->add('data', $resource);
         if (!empty($includes)) {
-            $this->set('included', $includes);
+            $this->add('included', $includes);
+            $included = $this->included;
+            if (!empty($included)) {
+                $included = array_values($included);
+                $length = count($included);
+                for ($i = 0; $i < $length - 1; $i++) {
+                    $includeA = $included[$i] instanceof Resource ? $included[$i] : new Resource($included[$i]);
+                    for ($j = $i + 1; $j < $length; $j++) {
+                        $includeB = $included[$j] instanceof Resource ? $included[$j] : new Resource($included[$j]);
+                        if ($includeA->id == $includeB->id && $includeA->type == $includeB->type) {
+                            unset($included[$j]);
+                            $length--;
+                        }
+                    }
+                }
+            }
+            $this->set('included', $included);
         }
 
         return $this;
@@ -237,7 +253,7 @@ class TopLevel extends Object
                         }
                     }
                     if (!empty($relationshipArray['data'])) {
-                        $includes[] = $relationshipArray['data'];
+                        $includes[] = new Resource($relationshipArray['data']);
                     }
                     if (empty($relationship) || empty($relationship['data'])) {
                         if ($isList) {
