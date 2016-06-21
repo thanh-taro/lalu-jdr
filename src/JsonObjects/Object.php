@@ -26,6 +26,19 @@ abstract class Object
     }
 
     /**
+     * Convert param into Jsonapi object
+     *
+     * @param string $field
+     * @param mixed  $params
+     *
+     * @return static
+     */
+    public function convert($field, $params)
+    {
+        return $params;
+    }
+
+    /**
      * Set params.
      *
      * @param array $params
@@ -56,13 +69,9 @@ abstract class Object
         if ($jsonStruct === false || $jsonStruct === null || !is_array($jsonStruct)) {
             return $this;
         }
-        if (empty($jsonStruct)) {
-            $this->_params = $params;
-        } else {
-            foreach ($params as $field => $value) {
-                if (in_array($field, $jsonStruct)) {
-                    $this->_params[$field] = $value;
-                }
+        foreach ($params as $field => $value) {
+            if (empty($jsonStruct) || in_array($field, $jsonStruct)) {
+                $this->_params[$field] = $this->convert($field, $value);
             }
         }
 
@@ -115,7 +124,7 @@ abstract class Object
             return $this;
         }
         if (empty($jsonStruct) || in_array($field, $jsonStruct)) {
-            $this->_params[$field] = $value;
+            $this->_params[$field] = $this->convert($field, $value);
         }
 
         return $this;
@@ -141,9 +150,9 @@ abstract class Object
                 $this->_params[$field] = [];
             }
             if ($key === null) {
-                $this->_params[$field][] = $value;
+                $this->_params[$field][] = $this->convert($field, $value);
             } else {
-                $this->_params[$field][$key] = $value;
+                $this->_params[$field][$key] = $this->convert($field, $value);
             }
         }
 

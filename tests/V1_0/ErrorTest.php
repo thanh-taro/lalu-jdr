@@ -92,35 +92,6 @@ class ErrorTest extends BaseJsonObjectTestCase
         $this->assertSame(['key' => $source], $object->source);
         $this->assertSame(['source' => ['key' => $source]], $object->getParams());
         $this->assertSame(['source' => ['key' => $source]], $object->getParams(['source']));
-
-        $jsonStruct = $object->getJsonStruct();
-        if (is_array($jsonStruct)) {
-            if (!empty($jsonStruct)) {
-                foreach ($jsonStruct as $field) {
-                    for ($i = 0;$i < static::MAX_LOOP;++$i) {
-                        $value = $faker->word;
-                        $object = new Error([$field => $value]);
-                        $this->assertSame($value, $object->$field);
-                    }
-                }
-                $params = [];
-                foreach ($jsonStruct as $field) {
-                    $params[$field] = $faker->word;
-                }
-                $object = new Error($params);
-                foreach ($params as $field => $value) {
-                    $this->assertSame($value, $object->$field);
-                }
-                $this->assertSame($params, $object->getParams());
-            } else {
-                for ($i = 0;$i < static::MAX_LOOP;++$i) {
-                    $field = $faker->word;
-                    $value = $faker->word;
-                    $object = new Error([$field => $value]);
-                    $this->assertSame($value, $object->$field);
-                }
-            }
-        }
     }
 
     public function testToArrayToJson()

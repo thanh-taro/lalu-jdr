@@ -16,7 +16,7 @@ class TopLevel extends Object
     public function __construct(array $params = [])
     {
         parent::__construct($params);
-        $this->set('jsonapi', (new Jsonapi(['version' => '1.0'])));
+        $this->set('jsonapi', ['version' => '1.0']);
     }
 
     /**
@@ -27,6 +27,62 @@ class TopLevel extends Object
     public function getJsonStruct()
     {
         return ['data', 'errors', 'included', 'links', 'meta', 'jsonapi'];
+    }
+
+    /**
+     * Convert param into Jsonapi object.
+     *
+     * @param string $field
+     * @param mixed  $params
+     *
+     * @return static
+     */
+    public function convert($field, $params)
+    {
+        switch ($field) {
+            case 'data':
+                if ($params instanceof Resource) {
+                    return $params;
+                } elseif (is_array($params)) {
+                    $isList = false;
+                    $converted = [];
+                    foreach ($params as $key => $value) {
+                        if ($value instanceof Resource) {
+                            $isList = true;
+                            $converted[] = $value;
+                        } elseif ($key === 'id') {
+                            $converted[] = new Resource($params);
+                        } else {
+                            $converted[] = new Resource($value);
+                        }
+                    }
+                    if ($isList) {
+                        return empty($converted) ? null : $converted[0];
+                    }
+
+                    return $converted;
+                }
+
+                return;
+            case 'meta':
+                if ($params instanceof Meta) {
+                    return $params;
+                } elseif (is_array($params)) {
+                    return new Meta($params);
+                }
+
+                return;
+            case 'jsonapi':
+                if ($params instanceof Jsonapi) {
+                    return $params;
+                } elseif (is_array($params)) {
+                    return new Jsonapi($params);
+                }
+
+                return;
+            default:
+                return $params;
+        }
     }
 
     /**
@@ -147,6 +203,12 @@ class TopLevel extends Object
                     }
                 }
                 $relationshipTopLevel->delete('jsonapi');
+                $data = $relationshipTopLevel->data;
+                if (is_array($data)) {
+                    $isList = true;
+                } else {
+                    $isList = false;
+                }
                 $relationshipArray = $relationshipTopLevel->toArray();
                 $relationship = [];
                 $include = [];
@@ -173,9 +235,10 @@ class TopLevel extends Object
                 if (!empty($relationshipArray['data'])) {
                     $includes[] = $relationshipArray['data'];
                 }
-                if (!empty($relationship)) {
-                    $resource->add('relationships', $relationship, $key);
+                if (empty($relationship) && !$isList) {
+                    $relationship = null;
                 }
+                $resource->add('relationships', $relationship, $key);
             }
         }
 
