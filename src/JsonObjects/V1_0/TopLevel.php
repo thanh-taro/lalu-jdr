@@ -167,6 +167,7 @@ class TopLevel extends Object
         $relationships = $model->getRelationships();
         if (!empty($relationships)) {
             foreach ($relationships as $key => $value) {
+                $isList = false;
                 if ($value instanceof static) {
                     $relationshipTopLevel = $value;
                 } else {
@@ -181,9 +182,11 @@ class TopLevel extends Object
                     if ($data !== null) {
                         if ($data instanceof AbstractPaginator) {
                             $relationshipTopLevel->setPagination($data);
+                            $isList = true;
                         } else {
                             if ($data instanceof Collection) {
                                 $data = $data->all();
+                                $isList = true;
                             }
                             $relationshipTopLevel->setModel($data);
                         }
@@ -204,10 +207,8 @@ class TopLevel extends Object
                 }
                 $relationshipTopLevel->delete('jsonapi');
                 $data = $relationshipTopLevel->data;
-                if (is_array($data)) {
+                if (is_array($data) && $isList === false) {
                     $isList = true;
-                } else {
-                    $isList = false;
                 }
                 $relationshipArray = $relationshipTopLevel->toArray();
                 $relationship = [];
