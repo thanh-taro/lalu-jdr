@@ -89,10 +89,11 @@ class TopLevel extends Object
      * Set model as data.
      *
      * @param \LaLu\JDR\Models\V1_0\ResourceInterface|\LaLu\JDR\Models\V1_0\ResourceInterface[] $model
+     * @param bool  $getRelationships
      *
      * @return $this
      */
-    public function setModel($model)
+    public function setModel($model, $getRelationships = true)
     {
         $this->set('data', null);
         if (is_array($model)) {
@@ -100,7 +101,7 @@ class TopLevel extends Object
                 $this->addModel($m);
             }
         } else {
-            list($resource, $includes) = $this->parseModel($model);
+            list($resource, $includes) = $this->parseModel($model, $getRelationships);
             $this->set('data', $resource);
             if (!empty($includes)) {
                 $this->set('included', $includes);
@@ -114,12 +115,13 @@ class TopLevel extends Object
      * Add model as data.
      *
      * @param mixed $model
+     * @param bool  $getRelationships
      *
      * @return $this
      */
-    public function addModel($model)
+    public function addModel($model, $getRelationships = true)
     {
-        list($resource, $includes) = $this->parseModel($model);
+        list($resource, $includes) = $this->parseModel($model, $getRelationships);
         $this->add('data', $resource);
         if (!empty($includes)) {
             $this->set('included', $includes);
@@ -149,7 +151,7 @@ class TopLevel extends Object
      *
      * @return array
      */
-    public function parseModel($model)
+    public function parseModel($model, $getRelationships = true)
     {
         $includes = [];
         $resource = new Resource([
@@ -188,7 +190,7 @@ class TopLevel extends Object
                                 $data = $data->all();
                                 $isList = true;
                             }
-                            $relationshipTopLevel->setModel($data);
+                            $relationshipTopLevel->setModel($data, false);
                         }
                     }
                     if (!empty($value['links'])) {
