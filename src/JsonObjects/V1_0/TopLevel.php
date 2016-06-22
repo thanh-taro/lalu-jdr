@@ -136,12 +136,32 @@ class TopLevel extends Object
         return $this;
     }
 
-    public function setPagination(AbstractPaginator $collections)
+    public function setPagination(AbstractPaginator $collections, $isRelationship = false, $path = null)
     {
-        list($resources, $links, $meta, $includes) = $this->parsePagination($collections);
+        list($resources, $links, $meta, $includes) = $this->parsePagination($collections, $isRelationship, $path);
         $this->set('data', $resources);
         if (!empty($links)) {
-            $this->set('links', $links);
+            $oldLinks = $this->links;
+            if (empty($oldLinks)) {
+                $this->set('links', $links);
+            } else {
+                $links = ($links instanceof Links) ? $links->toArray() : $links;
+                if ($oldLinks instanceof Links) {
+                    foreach ($links as $key => $link) {
+                        $oldLinks->set($key, $link);
+                    }
+                } elseif ($oldLinks instanceof Link || !is_array($oldLinks)) {
+                    $oldLinks = [$oldLinks];
+                    foreach ($links as $key => $link) {
+                        $oldLinks[$key] = $link;
+                    }
+                } else {
+                    foreach ($links as $key => $link) {
+                        $oldLinks[$key] = $link;
+                    }
+                }
+                $this->set('links', $oldLinks);
+            }
         }
         if (!empty($meta)) {
             $this->set('meta', $meta);
@@ -186,14 +206,39 @@ class TopLevel extends Object
                         $relationshipTopLevel = new static();
                         if (!is_array($value)) {
                             $data = $value;
-                        } elseif (!empty($value['data'])) {
-                            $data = $value['data'];
                         } else {
-                            $data = null;
+                            if (!empty($value['data'])) {
+                                $data = $value['data'];
+                            } else {
+                                $data = null;
+                            }
+                            if (!empty($value['links'])) {
+                                if ($value['links'] instanceof Link) {
+                                    $links = $value['links']->getParams(['self', 'related']);
+                                } else {
+                                    $links = $value['links'];
+                                }
+                                if (!empty($links['self'])) {
+                                    $relationshipTopLevel->add('links', $links['self'], 'self');
+                                }
+                                if (!empty($links['related'])) {
+                                    $relationshipTopLevel->add('links', $links['related'], 'related');
+                                }
+                            }
                         }
                         if ($data !== null) {
                             if ($data instanceof AbstractPaginator) {
-                                $relationshipTopLevel->setPagination($data);
+                                $links = $relationshipTopLevel->links;
+                                if (empty($links)) {
+                                    $path = null;
+                                } elseif (is_array($links) && isset($links['self'])) {
+                                    $path = $links['self'];
+                                } elseif ($links instanceof Links) {
+                                    $path = $links->self;
+                                } else {
+                                    $path = null;
+                                }
+                                $relationshipTopLevel->setPagination($data, true, $path);
                                 $isList = true;
                             } else {
                                 if ($data instanceof Collection) {
@@ -201,19 +246,6 @@ class TopLevel extends Object
                                     $isList = true;
                                 }
                                 $relationshipTopLevel->setModel($data, false);
-                            }
-                        }
-                        if (!empty($value['links'])) {
-                            if ($value['links'] instanceof Link) {
-                                $links = $value['links']->getParams(['self', 'related']);
-                            } else {
-                                $links = $value['links'];
-                            }
-                            if (!empty($links['self'])) {
-                                $relationshipTopLevel->add('links', $links['self'], 'self');
-                            }
-                            if (!empty($links['related'])) {
-                                $relationshipTopLevel->add('links', $links['related'], 'related');
                             }
                         }
                     }
@@ -228,11 +260,8 @@ class TopLevel extends Object
                     if (!empty($relationshipArray['meta'])) {
                         $relationship['meta'] = $relationshipArray['meta'];
                     }
-                    if (!empty($relationshipArray['links']['self'])) {
-                        $relationship['links']['self'] = $relationshipArray['links']['self'];
-                    }
-                    if (!empty($relationshipArray['links']['related'])) {
-                        $relationship['links']['related'] = $relationshipArray['links']['related'];
+                    if (!empty($relationshipArray['links'])) {
+                        $relationship['links'] = $relationshipArray['links'];
                     }
                     if (!empty($relationshipArray['data'])) {
                         if ($relationshipTopLevel->data instanceof Resource) {
@@ -246,7 +275,13 @@ class TopLevel extends Object
                         }
                     }
                     if (!empty($relationshipArray['data'])) {
-                        $includes[] = new Resource($relationshipArray['data']);
+                        if ($isList && !empty($data)) {
+                            foreach ($data as $include) {
+                                $includes[] = ($include instanceof Resource) ? $include : new Resource($include);
+                            }
+                        } else {
+                            $includes[] = new Resource($relationshipArray['data']);
+                        }
                     }
                     if (empty($relationship) || empty($relationship['data'])) {
                         if ($isList) {
@@ -263,55 +298,46 @@ class TopLevel extends Object
         return [$resource, $includes];
     }
 
-    public function parsePagination(AbstractPaginator $collections)
+    public function parsePagination(AbstractPaginator $collections, $isRelationship = false, $path = null)
     {
         $resources = [];
         $includes = [];
         foreach ($collections->items() as $item) {
-            /*
-            $resource = new Resource([
-                'id' => $item->getResourceId(),
-                'type' => $item->getResourceType(),
-            ]);
-            $itemAttributes = $item->getResourceAttributes();
-            if (!empty($itemAttributes)) {
-                $resource->set('attributes', $itemAttributes);
-            }
-            $itemLinks = $item->getResourceLinks();
-            if (!empty($itemLinks)) {
-                $resource->set('links', $itemLinks);
-            }
-            $resources[] = $resource;
-            */
             list($resource, $included) = $this->parseModel($item);
             $resources[] = $resource;
             $includes = array_merge($includes, $included);
         }
-
-        $linksArr = [
-            'first' => $collections->url(1),
-            'prev' => $collections->previousPageUrl(),
-            'next' => $collections->nextPageUrl(),
-            'last' => method_exists($collections, 'lastPage') ? $collections->url($collections->lastPage()) : null,
-        ];
-        $currentQuery = parse_url(url()->full(), PHP_URL_QUERY);
-        if (!empty($currentQuery)) {
-            parse_str($currentQuery, $queryArr);
-            foreach ($linksArr as $key => $value) {
-                if (!empty($value)) {
-                    $urlQuery = parse_url($value, PHP_URL_QUERY);
-                    if (!empty($urlQuery)) {
-                        parse_str($urlQuery, $urlArr);
-                        foreach ($urlArr as $name => $val) {
-                            if (isset($queryArr[$name]) && is_array($queryArr[$name]) && is_array($val)) {
-                                foreach ($val as $k => $v) {
-                                    $queryArr[$name][$k] = $v;
+        if ($isRelationship && $path === null) {
+            $linksArr = [];
+        } else {
+            if ($path !== null) {
+                $collections->setPath($path);
+            }
+            $linksArr = [
+                'first' => $collections->url(1),
+                'prev' => $collections->previousPageUrl(),
+                'next' => $collections->nextPageUrl(),
+                'last' => method_exists($collections, 'lastPage') ? $collections->url($collections->lastPage()) : null,
+            ];
+            $currentQuery = parse_url(url()->full(), PHP_URL_QUERY);
+            if (!empty($currentQuery)) {
+                parse_str($currentQuery, $queryArr);
+                foreach ($linksArr as $key => $value) {
+                    if (!empty($value)) {
+                        $urlQuery = parse_url($value, PHP_URL_QUERY);
+                        if (!empty($urlQuery)) {
+                            parse_str($urlQuery, $urlArr);
+                            foreach ($urlArr as $name => $val) {
+                                if (isset($queryArr[$name]) && is_array($queryArr[$name]) && is_array($val)) {
+                                    foreach ($val as $k => $v) {
+                                        $queryArr[$name][$k] = $v;
+                                    }
+                                } else {
+                                    $queryArr[$name] = $val;
                                 }
-                            } else {
-                                $queryArr[$name] = $val;
                             }
+                            $linksArr[$key] = url()->current().'?'.http_build_query($queryArr);
                         }
-                        $linksArr[$key] = url()->current().'?'.http_build_query($queryArr);
                     }
                 }
             }
