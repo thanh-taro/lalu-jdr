@@ -166,7 +166,11 @@ abstract class Object
                 if ($key === null) {
                     $this->_params[$field][] = $add;
                 } else {
-                    $this->_params[$field][$key] = $add;
+                    if ($this->_params[$field] instanceof self) {
+                        $this->_params[$field]->set($key, $add);
+                    } elseif (is_array($this->_params[$field])) {
+                        $this->_params[$field][$key] = $add;
+                    }
                 }
             }
         }
