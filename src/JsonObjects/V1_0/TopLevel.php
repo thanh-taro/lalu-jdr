@@ -98,7 +98,11 @@ class TopLevel extends Object
     public function setModel($model, $getRelationships = true)
     {
         $this->set('data', null);
-        if (is_array($model)) {
+        if ($model instanceof Collection) {
+            foreach ($model->all() as $m) {
+                $this->addModel($m, $getRelationships);
+            }
+        } elseif (is_array($model)) {
             foreach ($model as $m) {
                 $this->addModel($m, $getRelationships);
             }
@@ -126,23 +130,7 @@ class TopLevel extends Object
         list($resource, $includes) = $this->parseModel($model, $getRelationships);
         $this->add('data', $resource);
         if (!empty($includes)) {
-            $this->add('included', $includes);
-            $included = $this->included;
-            if (!empty($included)) {
-                $included = array_values($included);
-                $length = count($included);
-                for ($i = 0; $i < $length - 1; $i++) {
-                    $includeA = $included[$i] instanceof Resource ? $included[$i] : new Resource($included[$i]);
-                    for ($j = $i + 1; $j < $length; $j++) {
-                        $includeB = $included[$j] instanceof Resource ? $included[$j] : new Resource($included[$j]);
-                        if ($includeA->id == $includeB->id && $includeA->type == $includeB->type) {
-                            unset($included[$j]);
-                            $length--;
-                        }
-                    }
-                }
-            }
-            $this->set('included', $included);
+            $this->add('included', $includes)->uniqueIncludes();
         }
 
         return $this;
@@ -150,13 +138,16 @@ class TopLevel extends Object
 
     public function setPagination(AbstractPaginator $collections)
     {
-        list($resources, $links, $meta) = $this->parsePagination($collections);
+        list($resources, $links, $meta, $includes) = $this->parsePagination($collections);
         $this->set('data', $resources);
         if (!empty($links)) {
             $this->set('links', $links);
         }
         if (!empty($meta)) {
             $this->set('meta', $meta);
+        }
+        if (!empty($includes)) {
+            $this->add('included', $includes)->uniqueIncludes();
         }
 
         return $this;
@@ -275,7 +266,9 @@ class TopLevel extends Object
     public function parsePagination(AbstractPaginator $collections)
     {
         $resources = [];
+        $includes = [];
         foreach ($collections->items() as $item) {
+            /*
             $resource = new Resource([
                 'id' => $item->getResourceId(),
                 'type' => $item->getResourceType(),
@@ -289,6 +282,10 @@ class TopLevel extends Object
                 $resource->set('links', $itemLinks);
             }
             $resources[] = $resource;
+            */
+            list($resource, $included) = $this->parseModel($item);
+            $resources[] = $resource;
+            $includes = array_merge($includes, $included);
         }
 
         $linksArr = [
@@ -334,6 +331,28 @@ class TopLevel extends Object
         }
         $meta = new Meta($metaArr);
 
-        return [$resources, $links, $meta];
+        return [$resources, $links, $meta, $includes];
+    }
+
+    public function uniqueIncludes()
+    {
+        $included = $this->included;
+        if (!empty($included)) {
+            $included = array_values($included);
+            $length = count($included);
+            for ($i = 0; $i < $length - 1; ++$i) {
+                $includeA = $included[$i] instanceof Resource ? $included[$i] : new Resource($included[$i]);
+                for ($j = $i + 1; $j < $length; ++$j) {
+                    $includeB = $included[$j] instanceof Resource ? $included[$j] : new Resource($included[$j]);
+                    if ($includeA->id == $includeB->id && $includeA->type == $includeB->type) {
+                        unset($included[$j]);
+                        --$length;
+                    }
+                }
+            }
+        }
+        $this->set('included', $included);
+
+        return $this;
     }
 }
